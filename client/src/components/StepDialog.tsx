@@ -24,7 +24,7 @@ interface StepDialogProps {
 export function StepDialog({ isOpen, onClose }: StepDialogProps) {
   const [step, setStep] = useState(0);
   const { toast } = useToast();
-  
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -47,7 +47,7 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
   const handleNext = async () => {
     const fieldValue = form.getValues(currentField.name);
     const fieldError = await form.trigger(currentField.name);
-    
+
     if (!fieldError || !fieldValue) {
       return;
     }
@@ -72,6 +72,12 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
       }
     } else {
       setStep(step + 1);
+    }
+  };
+
+  const handleBack = () => {
+    if (step > 0) {
+      setStep(step - 1);
     }
   };
 
@@ -108,12 +114,22 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
                 {form.formState.errors[currentField.name]?.message}
               </p>
             )}
-            <Button 
-              onClick={handleNext}
-              className="w-full bg-black hover:bg-gray-800"
-            >
-              {step === fields.length - 1 ? "Send Message" : "Continue"}
-            </Button>
+            <div className="space-y-2">
+              <Button 
+                onClick={handleNext}
+                className="w-full bg-black hover:bg-gray-800"
+              >
+                {step === fields.length - 1 ? "Send Message" : "Continue"}
+              </Button>
+              {step > 0 && (
+                <button
+                  onClick={handleBack}
+                  className="w-full text-gray-500 hover:text-gray-700 text-sm py-2 transition-colors"
+                >
+                  Go back
+                </button>
+              )}
+            </div>
           </motion.div>
         </AnimatePresence>
       </DialogContent>

@@ -64,7 +64,7 @@ export default function Home() {
         </section>
 
         {/* Section: The AdVelocity Difference */}
-        <section className="bg-gray-100 px-4 py-16 md:py-24">
+        <section className="bg-black text-white px-4 py-16 md:py-24">
           <div className="max-w-4xl mx-auto space-y-6">
             <h2 className="text-2xl md:text-3xl font-extrabold">The AdVelocity Difference</h2>
             <p className="text-lg">
@@ -96,7 +96,7 @@ export default function Home() {
         </section>
 
         {/* Section: You Deserve Better */}
-        <section className="bg-gray-100 px-4 py-16 md:py-24">
+        <section className="bg-black text-white px-4 py-16 md:py-24">
           <div className="max-w-4xl mx-auto space-y-6">
             <h2 className="text-2xl md:text-3xl font-extrabold">You Deserve Better From Your Marketing Partner</h2>
             <p className="text-lg">
@@ -124,7 +124,7 @@ export default function Home() {
         </section>
 
         {/* Section: Strategy, Creative & Analytics */}
-        <section className="bg-gray-100 px-4 py-16 md:py-24">
+        <section className="bg-black text-white px-4 py-16 md:py-24">
           <div className="max-w-4xl mx-auto space-y-6">
             <h3 className="text-xl md:text-2xl font-bold">Strategy That Converts</h3>
             <p className="text-lg">
@@ -154,7 +154,7 @@ export default function Home() {
         </section>
 
         {/* Section: What We Specialize In */}
-        <section className="bg-gray-100 px-4 py-16 md:py-24">
+        <section className="bg-black text-white px-4 py-16 md:py-24">
           <div className="max-w-4xl mx-auto space-y-6">
             <h2 className="text-2xl md:text-3xl font-extrabold">What We Specialize In</h2>
             <ul className="list-disc list-inside text-lg space-y-2">

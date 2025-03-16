@@ -7,6 +7,7 @@ import Home from "@/pages/Home";
 import Blog from "@/pages/Blog";
 import FreeTools from "@/pages/FreeTools";
 import AdHooks from "@/pages/AdHooks";
+import TestLeadForm from "@/pages/TestLeadForm";
 
 function Router() {
   return (
@@ -15,6 +16,7 @@ function Router() {
       <Route path="/blog" component={Blog} />
       <Route path="/tools" component={FreeTools} />
       <Route path="/hooks" component={AdHooks} />
+      <Route path="/test-form" component={TestLeadForm} />
       <Route component={NotFound} />
     </Switch>
   );

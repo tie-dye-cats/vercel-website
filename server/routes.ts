@@ -10,6 +10,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/leads", async (req, res) => {
     try {
       const { name, email, company } = req.body;
+      console.log("Received lead submission:", { name, email, company });
 
       // Create or update a contact in HubSpot
       const response = await hubspotClient.crm.contacts.basicApi.create({
@@ -21,6 +22,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       });
 
+      console.log("HubSpot API Response:", response);
       res.json({ success: true, contact: response });
     } catch (error: any) {
       console.error("Hubspot API Error:", error);

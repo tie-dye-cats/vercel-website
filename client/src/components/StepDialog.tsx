@@ -57,7 +57,7 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
     },
     { 
       name: "phone" as const, 
-      label: "Can we get those digits? Okay, maybe it's too soon—but just letting you know we're not afraid to hop on a call. Just don't ghost us, boo.", 
+      label: "Your phone number is not required but if you prefer getting down to business over text or by phone, then we're going to need those digits. (We won't blow up your phone with dumb offers or try to get you on more calls. Just don't ghost us ;)", 
       type: "tel",
       placeholder: "Phone Number"
     },

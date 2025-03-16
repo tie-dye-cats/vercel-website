@@ -74,7 +74,7 @@ export default function Blog() {
                 whileTap={{ scale: 0.95 }}
                 className="mt-4 bg-black hover:bg-gray-800 text-white py-2 px-4 rounded-full text-sm font-bold focus:outline-none focus:ring-2 focus:ring-gray-400 shadow-lg transform transition-all duration-300"
               >
-                Read More
+                Dropping Truth Bombs, You here for it?
               </motion.button>
             </motion.div>
 
@@ -97,7 +97,7 @@ export default function Blog() {
                 whileTap={{ scale: 0.95 }}
                 className="mt-4 bg-black hover:bg-gray-800 text-white py-2 px-4 rounded-full text-sm font-bold focus:outline-none focus:ring-2 focus:ring-gray-400 shadow-lg transform transition-all duration-300"
               >
-                Read More
+                Dropping Truth Bombs, You here for it?
               </motion.button>
             </motion.div>
           </div>

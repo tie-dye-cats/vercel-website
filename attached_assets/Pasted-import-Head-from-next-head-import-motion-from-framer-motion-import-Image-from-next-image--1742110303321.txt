@@ -1,0 +1,77 @@
+import Head from 'next/head'
+import { motion } from 'framer-motion'
+import Image from 'next/image'
+
+export default function NoBSBlog() {
+  return (
+    <>
+      <Head>
+        <title>No‑BS Blog – AdVelocity</title>
+        <meta
+          name="description"
+          content="No‑BS Blog: Real talk on marketing, advertising, and growth. Get straight-up advice without the BS."
+        />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </Head>
+      <main className="bg-white text-gray-900">
+        {/* Hero Section */}
+        <section className="relative flex flex-col items-center justify-center min-h-screen text-white">
+          <div className="absolute inset-0">
+            <Image
+              src="https://source.unsplash.com/1600x900/?urban,graffiti" // Replace with your asset if needed.
+              alt="No‑BS Blog Hero Image"
+              layout="fill"
+              objectFit="cover"
+              priority
+            />
+            <div className="absolute inset-0 bg-black opacity-50"></div>
+          </div>
+          <div className="relative z-10 text-center px-4">
+            <motion.h1
+              initial={{ opacity: 0, y: -50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="text-4xl md:text-6xl font-extrabold mb-6"
+            >
+              No‑BS Blog
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="max-w-2xl mx-auto text-sm md:text-base"
+            >
+              Real talk on marketing, advertising, and growth. No fluff, no BS—just straight-up insights.
+            </motion.p>
+          </div>
+        </section>
+
+        {/* Blog Posts Section */}
+        <section className="px-4 py-16 md:py-24">
+          <div className="max-w-4xl mx-auto space-y-12">
+            {/* Blog Post: Why Your Ad Copy Sucks */}
+            <div className="border-b pb-8">
+              <motion.h2
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="text-3xl font-bold mb-4"
+              >
+                Why Your Ad Copy Sucks
+              </motion.h2>
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="text-lg"
+              >
+                If your ad copy isn’t driving results, it’s time to face the brutal truth. We break down the mistakes and show you how to fix it—no BS included.
+              </motion.p>
+            </div>
+            {/* Additional blog posts could be added here */}
+          </div>
+        </section>
+      </main>
+    </>
+  )
+}

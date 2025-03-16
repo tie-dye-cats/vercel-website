@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +15,12 @@ const formSchema = z.object({
   lastName: z.string().min(2, "Last name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
   phone: z.string().min(10, "Please enter a valid phone number"),
+  marketingConsent: z.boolean().refine((val) => val === true, {
+    message: "You must agree to receive marketing communications",
+  }),
+  communicationConsent: z.boolean().refine((val) => val === true, {
+    message: "You must agree to the communications terms",
+  }),
 });
 
 interface StepDialogProps {
@@ -32,6 +39,8 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
       lastName: "",
       email: "",
       phone: "",
+      marketingConsent: false,
+      communicationConsent: false,
     },
   });
 
@@ -40,16 +49,35 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
     { name: "lastName" as const, label: "And your last name?", type: "text" },
     { name: "email" as const, label: "What's your email address?", type: "email" },
     { name: "phone" as const, label: "Finally, your phone number?", type: "tel" },
+    {
+      name: "consent" as const,
+      label: "Just to keep things legal...",
+      type: "checkbox",
+      isConsentStep: true,
+    },
   ];
 
   const currentField = fields[step];
 
   const handleNext = async () => {
-    const fieldValue = form.getValues(currentField.name);
-    const fieldError = await form.trigger(currentField.name);
+    if (currentField.isConsentStep) {
+      const marketingConsent = form.getValues("marketingConsent");
+      const communicationConsent = form.getValues("communicationConsent");
 
-    if (!fieldError || !fieldValue) {
-      return;
+      if (!marketingConsent || !communicationConsent) {
+        form.setError("marketingConsent", {
+          type: "manual",
+          message: "Please agree to both consent options to continue",
+        });
+        return;
+      }
+    } else {
+      const fieldValue = form.getValues(currentField.name);
+      const fieldError = await form.trigger(currentField.name);
+
+      if (!fieldError || !fieldValue) {
+        return;
+      }
     }
 
     if (step === fields.length - 1) {
@@ -98,17 +126,46 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
             className="py-6"
           >
             <h2 className="text-2xl font-bold mb-4">{currentField.label}</h2>
-            <Input
-              type={currentField.type}
-              className="w-full mb-4"
-              {...form.register(currentField.name)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleNext();
-                }
-              }}
-            />
+            {!currentField.isConsentStep ? (
+              <Input
+                type={currentField.type}
+                className="w-full mb-4"
+                {...form.register(currentField.name)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleNext();
+                  }
+                }}
+              />
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="marketingConsent" 
+                    {...form.register("marketingConsent")}
+                  />
+                  <label 
+                    htmlFor="marketingConsent" 
+                    className="text-sm text-gray-600"
+                  >
+                    I agree to receive marketing communications from AdVelocity about products, services, and industry insights.
+                  </label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="communicationConsent" 
+                    {...form.register("communicationConsent")}
+                  />
+                  <label 
+                    htmlFor="communicationConsent" 
+                    className="text-sm text-gray-600"
+                  >
+                    I understand and agree that AdVelocity will use my information in accordance with their privacy policy to provide the requested services.
+                  </label>
+                </div>
+              </div>
+            )}
             {form.formState.errors[currentField.name] && (
               <p className="text-red-500 text-sm mb-4">
                 {form.formState.errors[currentField.name]?.message}

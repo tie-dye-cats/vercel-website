@@ -9,8 +9,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Lead submission endpoint
   app.post("/api/leads", async (req, res) => {
     try {
-      const { firstName, lastName, email, phone, company } = req.body;
-      console.log("Received lead submission:", { firstName, lastName, email, phone, company });
+      const { firstName, lastName, email, phone, company, marketingConsent, communicationConsent } = req.body;
+      console.log("Received lead submission:", { firstName, lastName, email, phone, company, marketingConsent, communicationConsent });
 
       // Create or update a contact in HubSpot
       const response = await hubspotClient.crm.contacts.basicApi.create({
@@ -20,6 +20,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: email,
           phone: phone,
           company: company || "",
+          marketing_consent: marketingConsent ? "Yes" : "No",
+          communication_consent: communicationConsent ? "Yes" : "No",
         },
       });
 

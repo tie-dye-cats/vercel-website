@@ -9,15 +9,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Lead submission endpoint
   app.post("/api/leads", async (req, res) => {
     try {
-      const { name, email, company } = req.body;
-      console.log("Received lead submission:", { name, email, company });
+      const { firstName, lastName, email, phone, company } = req.body;
+      console.log("Received lead submission:", { firstName, lastName, email, phone, company });
 
       // Create or update a contact in HubSpot
       const response = await hubspotClient.crm.contacts.basicApi.create({
         properties: {
-          firstname: name.split(" ")[0],
-          lastname: name.split(" ").slice(1).join(" ") || "",
+          firstname: firstName,
+          lastname: lastName,
           email: email,
+          phone: phone,
           company: company || "",
         },
       });

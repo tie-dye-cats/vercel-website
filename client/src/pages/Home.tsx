@@ -58,7 +58,7 @@ export default function Home() {
 
         {/* Section: Paid Ads Specialists */}
         <section className="px-4 py-16 md:py-24">
-          <div className="max-w-4xl mx-auto space-y-8">
+          <div className="max-w-4xl mx-auto space-y-8 text-center">
             <p className="text-xl md:text-2xl font-bold">
               Imagine Having a Team of Paid Ads Specialists Who Spend More Than 10-Minutes Per Day On Your Accounts Driving Real Results For Your Business.... With Zero Excuses!
             </p>

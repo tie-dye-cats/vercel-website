@@ -51,7 +51,7 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
     },
     { 
       name: "email" as const, 
-      label: "We'll clear the smoke on those trash metrics in no time—then we'll be toastin' to your big win. Drop your email below to get our unfiltered reply.", 
+      label: "Drop your email below to get our unfiltered reply.", 
       type: "email",
       placeholder: "Email",
       disclaimer: "We'll clear the smoke on those trash metrics in no time—then we'll be toastin' to your big win."

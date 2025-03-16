@@ -2,8 +2,11 @@ import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { AdPlatformSlider } from '@/components/AdPlatformSlider';
 import { ContactForm } from '@/components/ContactForm';
+import { useState } from 'react';
+import { StepDialog } from '@/components/StepDialog';
 
 export default function Home() {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   return (
     <>
       <Helmet>
@@ -42,6 +45,7 @@ export default function Home() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={() => setIsDialogOpen(true)}
               className="bg-black hover:bg-gray-800 text-white py-3 px-8 rounded-full text-lg font-bold mb-4 focus:outline-none focus:ring-2 focus:ring-gray-400 shadow-lg transform transition-all duration-300"
             >
               Message an Expert--Get a FREE Response in 1-Hour
@@ -198,6 +202,10 @@ export default function Home() {
           <div className="absolute top-0 right-0 w-64 h-64 bg-black opacity-5 rounded-full transform translate-x-1/2 -translate-y-1/2"></div>
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-black opacity-5 rounded-full transform -translate-x-1/2 translate-y-1/2"></div>
         </section>
+        <StepDialog 
+          isOpen={isDialogOpen}
+          onClose={() => setIsDialogOpen(false)}
+        />
       </main>
     </>
   );

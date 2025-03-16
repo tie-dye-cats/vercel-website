@@ -14,15 +14,21 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Helmet>
       <main className="bg-white text-gray-900">
-        {/* Hero Section with Perfect Hero Image */}
+        {/* Hero Section with Video Background */}
         <section className="relative flex flex-col items-center justify-center min-h-screen text-white">
           <div className="absolute inset-0">
-            <img
-              src="https://source.unsplash.com/1600x900/?glitch,technology"
-              alt="Hero Image"
+            <video 
+              autoPlay 
+              loop 
+              muted 
+              playsInline
               className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-black opacity-50"></div>
+              poster="https://source.unsplash.com/1600x900/?glitch,technology"
+            >
+              {/* We'll add the video source once uploaded */}
+              <source src="/your-video.mp4" type="video/mp4" />
+            </video>
+            <div className="absolute inset-0 bg-black opacity-60"></div>
           </div>
           <div className="relative z-10 text-center px-4">
             <motion.h1

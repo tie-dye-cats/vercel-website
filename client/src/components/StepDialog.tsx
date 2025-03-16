@@ -12,7 +12,6 @@ import { apiRequest } from "@/lib/queryClient";
 
 const formSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
-  lastName: z.string().min(2, "Last name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
   phone: z.string().min(10, "Please enter a valid phone number"),
   marketingConsent: z.boolean().refine((val) => val === true, {
@@ -36,7 +35,6 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       firstName: "",
-      lastName: "",
       email: "",
       phone: "",
       marketingConsent: false,
@@ -50,12 +48,6 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
       label: "Hey, can't wait to chat! Before we send our reply, can we get your first name?", 
       type: "text",
       placeholder: "First Name"
-    },
-    { 
-      name: "lastName" as const, 
-      label: `Thanks ${form.getValues("firstName")}! And what's your last name?`, 
-      type: "text",
-      placeholder: "Last Name"
     },
     { 
       name: "email" as const, 

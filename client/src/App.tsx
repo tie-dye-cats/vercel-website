@@ -6,7 +6,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Blog from "@/pages/Blog";
 import FreeTools from "@/pages/FreeTools";
-import AdAuditChecklist from "@/pages/AdAuditChecklist";
+import AdHooks from "@/pages/AdHooks";
 
 function Router() {
   return (
@@ -14,7 +14,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/blog" component={Blog} />
       <Route path="/tools" component={FreeTools} />
-      <Route path="/checklist" component={AdAuditChecklist} />
+      <Route path="/hooks" component={AdHooks} />
       <Route component={NotFound} />
     </Switch>
   );

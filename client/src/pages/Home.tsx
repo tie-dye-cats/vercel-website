@@ -41,7 +41,7 @@ export default function Home() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-full text-lg font-bold mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="bg-black hover:bg-gray-800 text-white py-3 px-6 rounded-full text-lg font-bold mb-4 focus:outline-none focus:ring-2 focus:ring-gray-400"
             >
               Message an Expert--Get a FREE Response in 1-Hour
             </motion.button>

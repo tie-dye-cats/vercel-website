@@ -1,7 +1,16 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const platforms = ['Facebook', 'Google', 'TikTok'];
+interface Platform {
+  name: string;
+  color: string;
+}
+
+const platforms: Platform[] = [
+  { name: 'Facebook', color: '#1877F2' }, // Official Facebook blue
+  { name: 'Google', color: '#EA4335' },   // Official Google red
+  { name: 'TikTok', color: '#00f2ea' }    // TikTok neon cyan
+];
 
 export function AdPlatformSlider() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -15,7 +24,7 @@ export function AdPlatformSlider() {
   }, []);
 
   return (
-    <span className="inline-block min-w-[100px] text-blue-400">
+    <span className="inline-block min-w-[100px]">
       <AnimatePresence mode="wait">
         <motion.span
           key={currentIndex}
@@ -24,8 +33,9 @@ export function AdPlatformSlider() {
           exit={{ y: -20, opacity: 0 }}
           transition={{ duration: 0.5 }}
           className="inline-block"
+          style={{ color: platforms[currentIndex].color }}
         >
-          {platforms[currentIndex]}
+          {platforms[currentIndex].name}
         </motion.span>
       </AnimatePresence>
     </span>

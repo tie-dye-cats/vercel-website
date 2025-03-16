@@ -45,13 +45,29 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
   });
 
   const fields = [
-    { name: "firstName" as const, label: "What's your first name?", type: "text" },
-    { name: "lastName" as const, label: "And your last name?", type: "text" },
-    { name: "email" as const, label: "What's your email address?", type: "email" },
-    { name: "phone" as const, label: "Finally, your phone number?", type: "tel" },
+    { 
+      name: "firstName" as const, 
+      label: "Hey, can't wait to chat! Before we send our reply, can we get your first name?", 
+      type: "text" 
+    },
+    { 
+      name: "lastName" as const, 
+      label: "Thanks! And what's your last name?", 
+      type: "text" 
+    },
+    { 
+      name: "email" as const, 
+      label: "Perfect! Where should we send our response?", 
+      type: "email" 
+    },
+    { 
+      name: "phone" as const, 
+      label: "Almost there! What's the best number to reach you?", 
+      type: "tel" 
+    },
     {
       name: "consent" as const,
-      label: "Just to keep things legal...",
+      label: "Last thing, just to keep everything above board...",
       type: "checkbox",
       isConsentStep: true,
     },

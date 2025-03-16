@@ -53,7 +53,8 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
       name: "email" as const, 
       label: "We'll clear the smoke on those trash metrics in no time—then we'll be toastin' to your big win. Drop your email below to get our unfiltered reply.", 
       type: "email",
-      placeholder: "Email"
+      placeholder: "Email",
+      disclaimer: "We'll clear the smoke on those trash metrics in no time—then we'll be toastin' to your big win."
     },
     { 
       name: "phone" as const, 
@@ -195,7 +196,7 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
             <div className="space-y-2">
               <Button 
                 onClick={handleNext}
-                className="w-full bg-black hover:bg-gray-800"
+                className="w-full bg-[#1877F2] hover:bg-[#166FE5] text-white"
               >
                 {step === fields.length - 1 ? "Send Message" : "Continue"}
               </Button>

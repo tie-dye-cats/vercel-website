@@ -25,8 +25,7 @@ export default function Home() {
               className="w-full h-full object-cover"
               poster="https://source.unsplash.com/1600x900/?glitch,technology"
             >
-              {/* We'll add the video source once uploaded */}
-              <source src="/your-video.mp4" type="video/mp4" />
+              <source src="/8632780-uhd_3840_2160_25fps_merged.mp4" type="video/mp4" />
             </video>
             <div className="absolute inset-0 bg-black opacity-60"></div>
           </div>

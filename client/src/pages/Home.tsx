@@ -1,6 +1,7 @@
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { AdPlatformSlider } from '@/components/AdPlatformSlider';
+import { ContactForm } from '@/components/ContactForm';
 
 export default function Home() {
   return (
@@ -174,9 +175,12 @@ export default function Home() {
 
         {/* Section: How Can We Help You Right Now */}
         <section className="px-4 py-16 md:py-24 text-center">
-          <div className="max-w-4xl mx-auto space-y-4">
+          <div className="max-w-xl mx-auto space-y-4">
             <h2 className="text-2xl md:text-3xl font-extrabold">How Can We Help You Right Now?</h2>
             <p className="text-lg">(We'll get back to you within 1 hour)</p>
+            <div className="mt-8 bg-white p-6 rounded-lg shadow-lg">
+              <ContactForm />
+            </div>
           </div>
         </section>
       </main>

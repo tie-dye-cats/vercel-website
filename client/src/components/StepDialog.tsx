@@ -57,9 +57,10 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
     },
     { 
       name: "phone" as const, 
-      label: "Your phone number is not required but if you prefer getting down to business over text or by phone, then we're going to need those digits. (We won't blow up your phone with dumb offers or try to get you on more calls. Just don't ghost us ;)", 
+      label: "Your phone number is not required but if you prefer getting down to business over text or by phone, then we're going to need those digits.", 
       type: "tel",
-      placeholder: "Phone Number"
+      placeholder: "Phone Number",
+      disclaimer: "(We won't blow up your phone with dumb offers or try to get you on more calls. Just don't ghost us ;)"
     },
     {
       name: "consent" as const,
@@ -139,18 +140,25 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
           >
             <h2 className="text-2xl font-bold mb-4">{currentField.label}</h2>
             {!currentField.isConsentStep ? (
-              <Input
-                type={currentField.type}
-                className="w-full mb-4"
-                placeholder={currentField.placeholder}
-                {...form.register(currentField.name)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleNext();
-                  }
-                }}
-              />
+              <div className="space-y-2">
+                <Input
+                  type={currentField.type}
+                  className="w-full"
+                  placeholder={currentField.placeholder}
+                  {...form.register(currentField.name)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleNext();
+                    }
+                  }}
+                />
+                {'disclaimer' in currentField && (
+                  <p className="text-sm text-gray-500 italic">
+                    {currentField.disclaimer}
+                  </p>
+                )}
+              </div>
             ) : (
               <div className="space-y-4">
                 <div className="flex items-center space-x-2">

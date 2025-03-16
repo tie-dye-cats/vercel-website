@@ -134,22 +134,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Section: You Deserve Better */}
-        <section className="bg-black text-white px-4 py-16 md:py-24">
-          <div className="max-w-4xl mx-auto space-y-6">
-            <h2 className="text-2xl md:text-3xl font-extrabold">You Deserve Better From Your Marketing Partner</h2>
-            <p className="text-lg">
-              Your business deserves a trusted marketing specialist—one that delivers on promises and drives profitable growth.
-            </p>
-            <p className="text-lg">
-              At our core, we are committed to one thing: achieving your business goals.
-            </p>
-            <p className="text-lg">
-              To accomplish this, we take a comprehensive approach, immersing ourselves in your unique business model, customer journey, and product offerings. With this understanding, we develop a tailored, cross-channel digital marketing strategy designed to deliver scalable, long-term profitability.
-            </p>
-          </div>
-        </section>
-
         {/* Section: Our Conversion Engine */}
         <section className="px-4 py-16 md:py-24">
           <div className="max-w-4xl mx-auto space-y-6">
@@ -177,18 +161,6 @@ export default function Home() {
             <p className="text-lg">
               We track the metrics that enhance your profitability while driving sustainable sales growth, not just the ones that make us look good.
             </p>
-          </div>
-        </section>
-
-        {/* Section: A True Extension Of Your Team */}
-        <section className="px-4 py-16 md:py-24">
-          <div className="max-w-4xl mx-auto space-y-6">
-            <h2 className="text-2xl md:text-3xl font-extrabold">A True Extension Of Your Team</h2>
-            <ul className="list-disc list-inside text-lg space-y-2">
-              <li>A proactive, collaborative partner who functions as an extension of your in-house team</li>
-              <li>Unbiased, expert guidance to help you navigate tough decisions</li>
-              <li>A partnership structured around your goals, not how much you spend on ads</li>
-            </ul>
           </div>
         </section>
 

@@ -48,22 +48,26 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
     { 
       name: "firstName" as const, 
       label: "Hey, can't wait to chat! Before we send our reply, can we get your first name?", 
-      type: "text" 
+      type: "text",
+      placeholder: "First Name"
     },
     { 
       name: "lastName" as const, 
-      label: "Thanks! And what's your last name?", 
-      type: "text" 
+      label: `Thanks ${form.getValues("firstName")}! And what's your last name?`, 
+      type: "text",
+      placeholder: "Last Name"
     },
     { 
       name: "email" as const, 
-      label: "Perfect! Where should we send our response?", 
-      type: "email" 
+      label: `Soon we'll be kickin' it like kickstands and fixing those metrics together. Now, where do you want me to send my unfiltered reply?`, 
+      type: "email",
+      placeholder: "Email"
     },
     { 
       name: "phone" as const, 
-      label: "Almost there! What's the best number to reach you?", 
-      type: "tel" 
+      label: "Can we get those digits? Okay, maybe it's too soon—but just letting you know we're not afraid to hop on a call. Just don't ghost us, boo.", 
+      type: "tel",
+      placeholder: "Phone Number"
     },
     {
       name: "consent" as const,
@@ -146,6 +150,7 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
               <Input
                 type={currentField.type}
                 className="w-full mb-4"
+                placeholder={currentField.placeholder}
                 {...form.register(currentField.name)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {

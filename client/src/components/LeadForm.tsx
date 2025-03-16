@@ -11,6 +11,8 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { useToast } from "@/hooks/use-toast"
+import { apiRequest } from "@/lib/queryClient"
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -19,11 +21,12 @@ const formSchema = z.object({
 })
 
 interface LeadFormProps {
-  onSubmit: (values: z.infer<typeof formSchema>) => void;
+  onSuccess?: () => void;
   buttonText?: string;
 }
 
-export function LeadForm({ onSubmit, buttonText = "Get Access" }: LeadFormProps) {
+export function LeadForm({ onSuccess, buttonText = "Get Access" }: LeadFormProps) {
+  const { toast } = useToast();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -32,6 +35,26 @@ export function LeadForm({ onSubmit, buttonText = "Get Access" }: LeadFormProps)
       company: "",
     },
   })
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      await apiRequest('POST', '/api/leads', values);
+
+      toast({
+        title: "Success!",
+        description: "Thank you for your interest. We'll be in touch soon!",
+      });
+
+      form.reset();
+      onSuccess?.();
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "There was a problem submitting your information. Please try again.",
+      });
+    }
+  }
 
   return (
     <Form {...form}>

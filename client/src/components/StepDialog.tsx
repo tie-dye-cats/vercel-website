@@ -9,7 +9,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import ReCAPTCHA from "react-google-recaptcha";
 
 const formSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
@@ -31,7 +30,6 @@ interface StepDialogProps {
 
 export function StepDialog({ isOpen, onClose }: StepDialogProps) {
   const [step, setStep] = useState(0);
-  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -96,23 +94,10 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
         return;
       }
 
-      // NOTE: Temporarily making recaptcha optional for testing
-      // if (!recaptchaToken) {
-      //   toast({
-      //     variant: "destructive",
-      //     title: "Error",
-      //     description: "Please complete the reCAPTCHA verification",
-      //   });
-      //   return;
-      // }
-
       // Final step submission
       try {
         const formData = form.getValues();
-        const response = await apiRequest('POST', '/api/leads', {
-          ...formData,
-          recaptchaToken: recaptchaToken || 'test-token' // Add a placeholder token
-        });
+        const response = await apiRequest('POST', '/api/leads', formData);
 
         if (!response.ok) {
           throw new Error('Failed to submit form');
@@ -126,7 +111,6 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
         onClose();
         form.reset();
         setStep(0);
-        setRecaptchaToken(null);
       } catch (error) {
         console.error('Form submission error:', error);
         toast({
@@ -157,7 +141,6 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
       onClose();
       setStep(0);
       form.reset();
-      setRecaptchaToken(null);
     }}>
       <DialogContent className="sm:max-w-md">
         <AnimatePresence mode="wait">
@@ -223,12 +206,6 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
                   >
                     I understand and agree that AdVelocity will use my information in accordance with their privacy policy to provide the requested services.
                   </label>
-                </div>
-                <div className="mt-4">
-                  <ReCAPTCHA
-                    sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" // Test key - will be replaced with real key
-                    onChange={(token) => setRecaptchaToken(token)}
-                  />
                 </div>
               </div>
             )}

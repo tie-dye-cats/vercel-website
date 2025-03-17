@@ -8,7 +8,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+//import { apiRequest } from "@/lib/queryClient";
 
 const formSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
@@ -46,33 +46,33 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
 
   const fields = [
     {
-      name: "firstName" as const,
+      name: "firstName",
       label: "Hey, can't wait to chat! Before we send our reply, can we get your first name?",
       type: "text",
       placeholder: "First Name"
     },
     {
-      name: "email" as const,
+      name: "email",
       label: "Drop your email below to get our unfiltered reply.",
       type: "email",
       placeholder: "Email",
       disclaimer: "We'll clear the smoke on those trash metrics in no time—then we'll be toastin' to your big win."
     },
     {
-      name: "phone" as const,
+      name: "phone",
       label: "Your phone number is not required but if you prefer getting down to business over text or by phone, then we're going to need those digits.",
       type: "tel",
       placeholder: "Phone Number",
       disclaimer: "(We won't blow up your phone with dumb offers or try to get you on more calls. Just don't ghost us ;)"
     },
     {
-      name: "question" as const,
+      name: "question",
       label: "We're all ears—tell us what's going down in the box below.",
       type: "textarea",
       placeholder: "What's on your mind? Tell us about your ad challenges..."
     },
     {
-      name: "consent" as const,
+      name: "consent",
       label: "Last thing—just to keep everything legit before we get cookin'...",
       type: "checkbox",
       isConsentStep: true,
@@ -94,10 +94,15 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
         return;
       }
 
-      // Final step submission
       try {
-        const formData = form.getValues();
-        const response = await apiRequest('POST', '/api/leads', formData);
+        const response = await fetch('/api/leads', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(form.getValues()),
+          credentials: 'include'
+        });
 
         if (!response.ok) {
           throw new Error('Failed to submit form');
@@ -120,8 +125,8 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
         });
       }
     } else {
-      const fieldValue = form.getValues(currentField.name);
-      const fieldError = await form.trigger(currentField.name);
+      const fieldValue = form.getValues(currentField.name as "firstName" | "email" | "phone" | "question");
+      const fieldError = await form.trigger(currentField.name as "firstName" | "email" | "phone" | "question");
 
       if (!fieldError || !fieldValue) {
         return;
@@ -159,14 +164,14 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
                   <textarea
                     className="w-full min-h-[120px] p-3 rounded-md border focus:ring-2 focus:ring-[#1877F2] focus:border-transparent"
                     placeholder={currentField.placeholder}
-                    {...form.register(currentField.name)}
+                    {...form.register(currentField.name as "question")}
                   />
                 ) : (
                   <Input
                     type={currentField.type}
                     className="w-full"
                     placeholder={currentField.placeholder}
-                    {...form.register(currentField.name)}
+                    {...form.register(currentField.name as "firstName" | "email" | "phone")}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
@@ -209,12 +214,12 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
                 </div>
               </div>
             )}
-            {form.formState.errors[currentField.name] && (
-              <p className="text-red-500 text-sm mb-4">
-                {form.formState.errors[currentField.name]?.message}
+            {form.formState.errors[currentField.name as keyof typeof form.formState.errors] && (
+              <p className="text-red-500 text-sm mt-2">
+                {form.formState.errors[currentField.name as keyof typeof form.formState.errors]?.message}
               </p>
             )}
-            <div className="space-y-2">
+            <div className="space-y-2 mt-4">
               <Button
                 onClick={handleNext}
                 className="w-full bg-[#1877F2] hover:bg-[#166FE5] text-white"

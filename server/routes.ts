@@ -9,8 +9,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Lead submission endpoint
   app.post("/api/leads", async (req, res) => {
     try {
-      const { firstName, email, phone, company, marketingConsent, communicationConsent } = req.body;
-      console.log("Received lead submission:", { firstName, email, phone, company, marketingConsent, communicationConsent });
+      const { firstName, email, phone, company, question, marketingConsent, communicationConsent } = req.body;
+      console.log("Received lead submission:", { firstName, email, phone, company, question, marketingConsent, communicationConsent });
 
       // Create or update a contact in HubSpot
       const response = await hubspotClient.crm.contacts.basicApi.create({
@@ -20,10 +20,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: email,
           phone: phone,
           company: company || "",
+          ad_question: question, // Store the question in a custom property
           marketing_consent: marketingConsent ? "Yes" : "No",
           communication_consent: communicationConsent ? "Yes" : "No",
         },
       });
+
+      // TODO: Add Slack integration here
+      // We'll need to install a Slack client package and set up the webhook
 
       console.log("HubSpot API Response:", response);
       res.json({ success: true, contact: response });

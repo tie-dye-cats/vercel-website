@@ -9,11 +9,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import ReCAPTCHA from "react-google-recaptcha";
 
 const formSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
   phone: z.string().min(10, "Please enter a valid phone number"),
+  question: z.string().min(10, "Please tell us a bit more about your situation"),
   marketingConsent: z.boolean().refine((val) => val === true, {
     message: "You must agree to receive marketing communications",
   }),
@@ -29,6 +31,7 @@ interface StepDialogProps {
 
 export function StepDialog({ isOpen, onClose }: StepDialogProps) {
   const [step, setStep] = useState(0);
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -37,6 +40,7 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
       firstName: "",
       email: "",
       phone: "",
+      question: "",
       marketingConsent: false,
       communicationConsent: false,
     },
@@ -64,8 +68,14 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
       disclaimer: "(We won't blow up your phone with dumb offers or try to get you on more calls. Just don't ghost us ;)"
     },
     {
+      name: "question" as const,
+      label: "We're all ears—tell us what's going down in the box below.",
+      type: "textarea",
+      placeholder: "What's on your mind? Tell us about your ad challenges..."
+    },
+    {
       name: "consent" as const,
-      label: "Last thing, just to keep everything above board...",
+      label: "Last thing—just to keep everything legit before we get cookin'...",
       type: "checkbox",
       isConsentStep: true,
     },
@@ -85,6 +95,15 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
         });
         return;
       }
+
+      if (!recaptchaToken) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Please complete the reCAPTCHA verification",
+        });
+        return;
+      }
     } else {
       const fieldValue = form.getValues(currentField.name);
       const fieldError = await form.trigger(currentField.name);
@@ -97,7 +116,7 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
     if (step === fields.length - 1) {
       // Submit form
       try {
-        await apiRequest('POST', '/api/leads', form.getValues());
+        await apiRequest('POST', '/api/leads', {...form.getValues(), recaptchaToken});
         toast({
           title: "Message sent!",
           description: "We'll be in touch within 1 hour.",
@@ -105,6 +124,7 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
         onClose();
         form.reset();
         setStep(0);
+        setRecaptchaToken(null);
       } catch (error) {
         toast({
           variant: "destructive",
@@ -128,6 +148,7 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
       onClose();
       setStep(0);
       form.reset();
+      setRecaptchaToken(null);
     }}>
       <DialogContent className="sm:max-w-md">
         <AnimatePresence mode="wait">
@@ -142,18 +163,26 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
             <h2 className="text-2xl font-bold mb-4">{currentField.label}</h2>
             {!currentField.isConsentStep ? (
               <div className="space-y-2">
-                <Input
-                  type={currentField.type}
-                  className="w-full"
-                  placeholder={currentField.placeholder}
-                  {...form.register(currentField.name)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleNext();
-                    }
-                  }}
-                />
+                {currentField.type === "textarea" ? (
+                  <textarea
+                    className="w-full min-h-[120px] p-3 rounded-md border focus:ring-2 focus:ring-[#1877F2] focus:border-transparent"
+                    placeholder={currentField.placeholder}
+                    {...form.register(currentField.name)}
+                  />
+                ) : (
+                  <Input
+                    type={currentField.type}
+                    className="w-full"
+                    placeholder={currentField.placeholder}
+                    {...form.register(currentField.name)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleNext();
+                      }
+                    }}
+                  />
+                )}
                 {'disclaimer' in currentField && (
                   <p className="text-sm text-gray-500 italic">
                     {currentField.disclaimer}
@@ -186,6 +215,12 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
                     I understand and agree that AdVelocity will use my information in accordance with their privacy policy to provide the requested services.
                   </label>
                 </div>
+                <div className="mt-4">
+                  <ReCAPTCHA
+                    sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" // Test key - will be replaced with real key
+                    onChange={(token) => setRecaptchaToken(token)}
+                  />
+                </div>
               </div>
             )}
             {form.formState.errors[currentField.name] && (
@@ -198,7 +233,7 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
                 onClick={handleNext}
                 className="w-full bg-[#1877F2] hover:bg-[#166FE5] text-white"
               >
-                {step === fields.length - 1 ? "Send Message" : "Continue"}
+                {step === fields.length - 1 ? "Send Message to a Real Person (Not a Bot)" : "Continue"}
               </Button>
               {step > 0 && (
                 <button

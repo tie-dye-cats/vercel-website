@@ -11,9 +11,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/leads", async (req, res) => {
     try {
       const { firstName, email, phone, company, question, marketingConsent, communicationConsent, recaptchaToken } = req.body;
-      console.log("Received lead submission:", { firstName, email, phone, company, question, marketingConsent, communicationConsent });
+      console.log("Received lead submission:", { 
+        firstName, 
+        email, 
+        phone, 
+        company, 
+        question, 
+        marketingConsent, 
+        communicationConsent,
+        hasRecaptchaToken: !!recaptchaToken 
+      });
 
       // Create or update a contact in HubSpot
+      console.log("Attempting to create HubSpot contact...");
       const response = await hubspotClient.crm.contacts.basicApi.create({
         properties: {
           firstname: firstName,
@@ -26,9 +36,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           communication_consent: communicationConsent ? "Yes" : "No",
         },
       });
+      console.log("HubSpot contact created successfully:", response);
 
       // Send notification to Slack
       if (process.env.SLACK_WEBHOOK_URL) {
+        console.log("Attempting to send Slack notification...");
         try {
           await fetch(process.env.SLACK_WEBHOOK_URL, {
             method: 'POST',
@@ -81,13 +93,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
               ]
             })
           });
+          console.log("Slack notification sent successfully");
         } catch (slackError) {
           console.error("Error sending to Slack:", slackError);
           // Don't fail the whole request if Slack fails
         }
+      } else {
+        console.log("Slack webhook URL not configured, skipping notification");
       }
 
-      console.log("HubSpot API Response:", response);
       res.json({ success: true, contact: response });
     } catch (error: any) {
       console.error("API Error:", error);

@@ -7,6 +7,12 @@ import { StepDialog } from '@/components/StepDialog';
 
 export default function Home() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const handleButtonClick = () => {
+    console.log('Button clicked, opening dialog');
+    setIsDialogOpen(true);
+  };
+
   return (
     <>
       <Helmet>
@@ -45,7 +51,7 @@ export default function Home() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => setIsDialogOpen(true)}
+              onClick={handleButtonClick}
               className="bg-[#1877F2] hover:bg-[#166FE5] text-white py-3 px-8 rounded-full text-lg font-bold mb-4 focus:outline-none focus:ring-2 focus:ring-[#1877F2] shadow-lg transform transition-all duration-300"
             >
               Message an Expert--Get a FREE Response in 1-Hour
@@ -204,7 +210,10 @@ export default function Home() {
         </section>
         <StepDialog 
           isOpen={isDialogOpen}
-          onClose={() => setIsDialogOpen(false)}
+          onClose={() => {
+            console.log('Closing dialog');
+            setIsDialogOpen(false);
+          }}
         />
       </main>
     </>

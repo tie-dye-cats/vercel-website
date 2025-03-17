@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -78,17 +82,6 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
 
   const handleNext = async () => {
     if (currentField.isConsentStep) {
-      const marketingConsent = form.getValues("marketingConsent");
-      const communicationConsent = form.getValues("communicationConsent");
-
-      if (!marketingConsent || !communicationConsent) {
-        form.setError("marketingConsent", {
-          type: "manual",
-          message: "Please agree to both consent options to continue",
-        });
-        return;
-      }
-
       try {
         const values = form.getValues();
         console.log("Starting form submission with data:", values);
@@ -149,12 +142,9 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => {
-      onClose();
-      setStep(0);
-      form.reset();
-    }}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
+        <DialogTitle className="sr-only">Contact Form</DialogTitle>
         <AnimatePresence mode="wait">
           <motion.div
             key={step}

@@ -47,22 +47,22 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
   });
 
   const fields = [
-    { 
-      name: "firstName" as const, 
-      label: "Hey, can't wait to chat! Before we send our reply, can we get your first name?", 
+    {
+      name: "firstName" as const,
+      label: "Hey, can't wait to chat! Before we send our reply, can we get your first name?",
       type: "text",
       placeholder: "First Name"
     },
-    { 
-      name: "email" as const, 
-      label: "Drop your email below to get our unfiltered reply.", 
+    {
+      name: "email" as const,
+      label: "Drop your email below to get our unfiltered reply.",
       type: "email",
       placeholder: "Email",
       disclaimer: "We'll clear the smoke on those trash metrics in no time—then we'll be toastin' to your big win."
     },
-    { 
-      name: "phone" as const, 
-      label: "Your phone number is not required but if you prefer getting down to business over text or by phone, then we're going to need those digits.", 
+    {
+      name: "phone" as const,
+      label: "Your phone number is not required but if you prefer getting down to business over text or by phone, then we're going to need those digits.",
       type: "tel",
       placeholder: "Phone Number",
       disclaimer: "(We won't blow up your phone with dumb offers or try to get you on more calls. Just don't ghost us ;)"
@@ -104,28 +104,30 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
         });
         return;
       }
-    } else {
-      const fieldValue = form.getValues(currentField.name);
-      const fieldError = await form.trigger(currentField.name);
 
-      if (!fieldError || !fieldValue) {
-        return;
-      }
-    }
-
-    if (step === fields.length - 1) {
-      // Submit form
+      // Final step submission
       try {
-        await apiRequest('POST', '/api/leads', {...form.getValues(), recaptchaToken});
+        const formData = form.getValues();
+        const response = await apiRequest('POST', '/api/leads', {
+          ...formData,
+          recaptchaToken
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to submit form');
+        }
+
         toast({
-          title: "Message sent!",
+          title: "Success!",
           description: "We'll be in touch within 1 hour.",
         });
+
         onClose();
         form.reset();
         setStep(0);
         setRecaptchaToken(null);
       } catch (error) {
+        console.error('Form submission error:', error);
         toast({
           variant: "destructive",
           title: "Error",
@@ -133,6 +135,12 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
         });
       }
     } else {
+      const fieldValue = form.getValues(currentField.name);
+      const fieldError = await form.trigger(currentField.name);
+
+      if (!fieldError || !fieldValue) {
+        return;
+      }
       setStep(step + 1);
     }
   };
@@ -192,24 +200,24 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
             ) : (
               <div className="space-y-4">
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="marketingConsent" 
+                  <Checkbox
+                    id="marketingConsent"
                     {...form.register("marketingConsent")}
                   />
-                  <label 
-                    htmlFor="marketingConsent" 
+                  <label
+                    htmlFor="marketingConsent"
                     className="text-sm text-gray-600"
                   >
                     I agree to receive marketing communications from AdVelocity about products, services, and industry insights.
                   </label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="communicationConsent" 
+                  <Checkbox
+                    id="communicationConsent"
                     {...form.register("communicationConsent")}
                   />
-                  <label 
-                    htmlFor="communicationConsent" 
+                  <label
+                    htmlFor="communicationConsent"
                     className="text-sm text-gray-600"
                   >
                     I understand and agree that AdVelocity will use my information in accordance with their privacy policy to provide the requested services.
@@ -229,7 +237,7 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
               </p>
             )}
             <div className="space-y-2">
-              <Button 
+              <Button
                 onClick={handleNext}
                 className="w-full bg-[#1877F2] hover:bg-[#166FE5] text-white"
               >

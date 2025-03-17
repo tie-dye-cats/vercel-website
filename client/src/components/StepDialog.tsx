@@ -91,7 +91,7 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
 
       try {
         const values = form.getValues();
-        console.log("Submitting form data:", values);
+        console.log("Starting form submission with data:", values);
 
         const response = await fetch('/api/leads', {
           method: 'POST',
@@ -101,10 +101,16 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
           body: JSON.stringify(values)
         });
 
+        console.log("Form submission response status:", response.status);
+
         if (!response.ok) {
           const errorData = await response.json();
+          console.error("Form submission error:", errorData);
           throw new Error(errorData.message || 'Failed to submit form');
         }
+
+        const responseData = await response.json();
+        console.log("Form submission successful:", responseData);
 
         toast({
           title: "Success! 🎯",
@@ -126,6 +132,8 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
       const fieldName = currentField.name as keyof z.infer<typeof formSchema>;
       const fieldValue = form.getValues(fieldName);
       const fieldError = await form.trigger(fieldName);
+
+      console.log(`Field validation - Name: ${fieldName}, Value: ${fieldValue}, Valid: ${fieldError}`);
 
       if (!fieldError || !fieldValue) {
         return;

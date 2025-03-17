@@ -118,8 +118,8 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
         }
 
         toast({
-          title: "Success!",
-          description: "We'll be in touch within 1 hour.",
+          title: "Success! 🎯",
+          description: "Your question is on its way to our experts. They'll get back to you within one hour!",
         });
 
         onClose();

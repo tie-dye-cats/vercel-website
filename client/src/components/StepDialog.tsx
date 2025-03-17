@@ -8,19 +8,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
-//import { apiRequest } from "@/lib/queryClient";
 
 const formSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
   phone: z.string().min(10, "Please enter a valid phone number"),
   question: z.string().min(10, "Please tell us a bit more about your situation"),
-  marketingConsent: z.boolean().refine((val) => val === true, {
-    message: "You must agree to receive marketing communications",
-  }),
-  communicationConsent: z.boolean().refine((val) => val === true, {
-    message: "You must agree to the communications terms",
-  }),
+  marketingConsent: z.boolean().default(false),
+  communicationConsent: z.boolean().default(false),
 });
 
 interface StepDialogProps {
@@ -95,17 +90,20 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
       }
 
       try {
+        const values = form.getValues();
+        console.log("Submitting form data:", values);
+
         const response = await fetch('/api/leads', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(form.getValues()),
-          credentials: 'include'
+          body: JSON.stringify(values)
         });
 
         if (!response.ok) {
-          throw new Error('Failed to submit form');
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to submit form');
         }
 
         toast({
@@ -125,8 +123,9 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
         });
       }
     } else {
-      const fieldValue = form.getValues(currentField.name as "firstName" | "email" | "phone" | "question");
-      const fieldError = await form.trigger(currentField.name as "firstName" | "email" | "phone" | "question");
+      const fieldName = currentField.name as keyof z.infer<typeof formSchema>;
+      const fieldValue = form.getValues(fieldName);
+      const fieldError = await form.trigger(fieldName);
 
       if (!fieldError || !fieldValue) {
         return;
@@ -164,7 +163,7 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
                   <textarea
                     className="w-full min-h-[120px] p-3 rounded-md border focus:ring-2 focus:ring-[#1877F2] focus:border-transparent"
                     placeholder={currentField.placeholder}
-                    {...form.register(currentField.name as "question")}
+                    {...form.register("question")}
                   />
                 ) : (
                   <Input

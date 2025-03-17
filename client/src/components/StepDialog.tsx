@@ -43,6 +43,70 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
     },
   });
 
+  const resetForm = () => {
+    form.reset();
+    setStep(0);
+  };
+
+  const handleNext = async () => {
+    if (currentField.isConsentStep) {
+      try {
+        const values = form.getValues();
+        console.log("Starting form submission with data:", values);
+
+        const response = await fetch('/api/leads', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(values)
+        });
+
+        console.log("Form submission response status:", response.status);
+
+        const responseData = await response.json();
+        if (!response.ok) {
+          console.error("Form submission error:", responseData);
+          throw new Error(responseData.message || 'Failed to submit form');
+        }
+
+        console.log("Form submission successful:", responseData);
+
+        toast({
+          title: "Success! 🎯",
+          description: "Your question is on its way to our experts. They'll get back to you within one hour!",
+        });
+
+        onClose();
+        resetForm();
+      } catch (error: any) {
+        console.error('Form submission error:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error.message || "There was a problem sending your message. Please try again.",
+        });
+      }
+    } else {
+      const fieldName = currentField.name as keyof z.infer<typeof formSchema>;
+      const fieldValue = form.getValues(fieldName);
+      const fieldError = await form.trigger(fieldName);
+
+      console.log(`Field validation - Name: ${fieldName}, Value: ${fieldValue}, Valid: ${fieldError}`);
+
+      if (!fieldError || !fieldValue) {
+        return;
+      }
+      setStep(step + 1);
+    }
+  };
+
+  const handleBack = () => {
+    if (step > 0) {
+      setStep(step - 1);
+    }
+  };
+
   const fields = [
     {
       name: "firstName",
@@ -80,69 +144,16 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
 
   const currentField = fields[step];
 
-  const handleNext = async () => {
-    if (currentField.isConsentStep) {
-      try {
-        const values = form.getValues();
-        console.log("Starting form submission with data:", values);
-
-        const response = await fetch('/api/leads', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(values)
-        });
-
-        console.log("Form submission response status:", response.status);
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error("Form submission error:", errorData);
-          throw new Error(errorData.message || 'Failed to submit form');
-        }
-
-        const responseData = await response.json();
-        console.log("Form submission successful:", responseData);
-
-        toast({
-          title: "Success! 🎯",
-          description: "Your question is on its way to our experts. They'll get back to you within one hour!",
-        });
-
-        onClose();
-        form.reset();
-        setStep(0);
-      } catch (error) {
-        console.error('Form submission error:', error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "There was a problem sending your message. Please try again.",
-        });
-      }
-    } else {
-      const fieldName = currentField.name as keyof z.infer<typeof formSchema>;
-      const fieldValue = form.getValues(fieldName);
-      const fieldError = await form.trigger(fieldName);
-
-      console.log(`Field validation - Name: ${fieldName}, Value: ${fieldValue}, Valid: ${fieldError}`);
-
-      if (!fieldError || !fieldValue) {
-        return;
-      }
-      setStep(step + 1);
-    }
-  };
-
-  const handleBack = () => {
-    if (step > 0) {
-      setStep(step - 1);
-    }
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog 
+      open={isOpen} 
+      onOpenChange={(open) => {
+        if (!open) {
+          resetForm();
+          onClose();
+        }
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogTitle className="sr-only">Contact Form</DialogTitle>
         <AnimatePresence mode="wait">

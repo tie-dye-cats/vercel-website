@@ -10,7 +10,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Lead submission endpoint
   app.post("/api/leads", async (req, res) => {
     try {
-      const { firstName, email, phone, company, question, marketingConsent, communicationConsent, recaptchaToken } = req.body;
+      const { firstName, email, phone, company, question, marketingConsent, communicationConsent } = req.body;
       console.log("Received lead submission:", { 
         firstName, 
         email, 
@@ -18,25 +18,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         company, 
         question, 
         marketingConsent, 
-        communicationConsent,
-        hasRecaptchaToken: !!recaptchaToken 
+        communicationConsent
       });
 
-      // Create or update a contact in HubSpot
-      console.log("Attempting to create HubSpot contact...");
-      const response = await hubspotClient.crm.contacts.basicApi.create({
-        properties: {
-          firstname: firstName,
-          lastname: "", // Empty string since we're not collecting last name
-          email: email,
-          phone: phone,
-          company: company || "",
-          ad_question: question, // Store the question in a custom property
-          marketing_consent: marketingConsent ? "Yes" : "No",
-          communication_consent: communicationConsent ? "Yes" : "No",
-        },
+      // First try to find if contact exists
+      console.log("Checking if contact exists in HubSpot...");
+      const searchResponse = await hubspotClient.crm.contacts.searchApi.doSearch({
+        filterGroups: [{
+          filters: [{
+            propertyName: 'email',
+            operator: 'EQ',
+            value: email
+          }]
+        }]
       });
-      console.log("HubSpot contact created successfully:", response);
+
+      let hubspotResponse;
+      const contactProperties = {
+        firstname: firstName,
+        lastname: "", // Empty string since we're not collecting last name
+        email: email,
+        phone: phone,
+        company: company || "",
+        ad_question: question,
+        marketing_consent: marketingConsent ? "Yes" : "No",
+        communication_consent: communicationConsent ? "Yes" : "No",
+      };
+
+      if (searchResponse.total > 0) {
+        // Update existing contact
+        console.log("Updating existing HubSpot contact...");
+        const existingContact = searchResponse.results[0];
+        hubspotResponse = await hubspotClient.crm.contacts.basicApi.update(
+          existingContact.id,
+          { properties: contactProperties }
+        );
+      } else {
+        // Create new contact
+        console.log("Creating new HubSpot contact...");
+        hubspotResponse = await hubspotClient.crm.contacts.basicApi.create({
+          properties: contactProperties
+        });
+      }
+      console.log("HubSpot contact operation successful:", hubspotResponse);
 
       // Send notification to Slack
       if (process.env.SLACK_WEBHOOK_URL) {
@@ -102,12 +126,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("Slack webhook URL not configured, skipping notification");
       }
 
-      res.json({ success: true, contact: response });
+      res.json({ success: true, contact: hubspotResponse });
     } catch (error: any) {
       console.error("API Error:", error);
       res.status(500).json({ 
         success: false, 
-        message: "Failed to process lead",
+        message: "There was a problem submitting your information. Please try again.",
         error: error.message 
       });
     }

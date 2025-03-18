@@ -43,11 +43,6 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
     },
   });
 
-  const resetForm = () => {
-    form.reset();
-    setStep(0);
-  };
-
   const handleNext = async () => {
     if (currentField.isConsentStep) {
       try {
@@ -78,7 +73,8 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
         });
 
         onClose();
-        resetForm();
+        form.reset();
+        setStep(0);
       } catch (error: any) {
         console.error('Form submission error:', error);
         toast({
@@ -149,7 +145,8 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
       open={isOpen} 
       onOpenChange={(open) => {
         if (!open) {
-          resetForm();
+          form.reset();
+          setStep(0);
           onClose();
         }
       }}

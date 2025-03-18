@@ -21,6 +21,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         communicationConsent
       });
 
+      if (!firstName || !email || !question) {
+        return res.status(400).json({
+          success: false,
+          message: "Missing required fields"
+        });
+      }
+
       // First try to find if contact exists
       console.log("Checking if contact exists in HubSpot...");
       const searchResponse = await hubspotClient.crm.contacts.searchApi.doSearch({

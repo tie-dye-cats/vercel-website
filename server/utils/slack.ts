@@ -11,8 +11,13 @@ export async function sendLeadNotification(leadData: {
   communicationConsent?: boolean;
 }) {
   try {
+    if (!process.env.SLACK_CHANNEL_ID) {
+      throw new Error("SLACK_CHANNEL_ID environment variable must be set");
+    }
+
     const message = {
-      channel: process.env.SLACK_CHANNEL_ID!,
+      channel: process.env.SLACK_CHANNEL_ID,
+      text: `New lead submitted from ${leadData.firstName}`, // Required fallback text
       blocks: [
         {
           type: "header",

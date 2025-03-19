@@ -1,5 +1,6 @@
 import { WebClient } from "@slack/web-api";
 
+// Initialize the Slack client
 const slack = new WebClient(process.env.SLACK_BOT_TOKEN);
 
 export async function sendLeadNotification(leadData: {
@@ -11,6 +12,7 @@ export async function sendLeadNotification(leadData: {
   communicationConsent?: boolean;
 }) {
   try {
+    // Validate required environment variables
     if (!process.env.SLACK_BOT_TOKEN) {
       console.error('SLACK_BOT_TOKEN is not configured');
       return;
@@ -21,36 +23,29 @@ export async function sendLeadNotification(leadData: {
       return;
     }
 
-    console.log('Attempting to send Slack notification with:', {
-      channel: process.env.SLACK_CHANNEL_ID,
-      botToken: process.env.SLACK_BOT_TOKEN ? 'Present' : 'Missing'
+    // Create a simple text message
+    const messageText = `New Lead: ${leadData.firstName}\nEmail: ${leadData.email}${leadData.phone ? `\nPhone: ${leadData.phone}` : ''}${leadData.question ? `\nQuestion: ${leadData.question}` : ''}`;
+
+    // Log the attempt
+    console.log('Attempting to send Slack message to channel:', {
+      channelId: process.env.SLACK_CHANNEL_ID,
+      hasToken: !!process.env.SLACK_BOT_TOKEN
     });
 
-    // Start with a simple message to test connectivity
+    // Try to send the message
     const result = await slack.chat.postMessage({
       channel: process.env.SLACK_CHANNEL_ID,
-      text: `New lead: ${leadData.firstName} (${leadData.email})`,
+      text: messageText
     });
 
     if (result.ok) {
-      console.log('Basic Slack notification sent successfully');
-
-      // If basic message works, send the detailed message
-      const detailedResult = await slack.chat.postMessage({
-        channel: process.env.SLACK_CHANNEL_ID,
-        text: `🎯 *New Lead Submitted!*\n\n*Name:* ${leadData.firstName}\n*Email:* ${leadData.email}\n*Phone:* ${leadData.phone || 'Not provided'}\n*Marketing Consent:* ${leadData.marketingConsent ? '✅' : '❌'}\n${leadData.question ? `\n*Question:*\n>${leadData.question}` : ''}`,
-        mrkdwn: true
-      });
-
-      if (detailedResult.ok) {
-        console.log('Detailed Slack notification sent successfully');
-      } else {
-        console.error('Failed to send detailed notification:', detailedResult.error);
-      }
+      console.log('Successfully sent Slack notification');
     } else {
-      console.error('Failed to send basic notification:', result.error);
+      console.error('Failed to send Slack message:', result.error);
     }
+
   } catch (error: any) {
+    // Log detailed error information
     console.error('Error sending Slack notification:', {
       message: error.message,
       code: error.code,

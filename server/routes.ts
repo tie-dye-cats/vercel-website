@@ -31,13 +31,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       try {
-        // Create contact in HubSpot
+        // Create contact in HubSpot using standard properties
         const response = await hubspotClient.crm.contacts.basicApi.create({
           properties: {
             email: email,
             firstname: firstName,
             phone: phone || "",
-            ad_question: question
+            message: question // Using standard 'message' property instead of custom 'ad_question'
           }
         });
 

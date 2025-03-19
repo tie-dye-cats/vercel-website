@@ -23,7 +23,7 @@ export async function sendLeadNotification(leadData: {
       return;
     }
 
-    // Log the attempt
+    // Log token type for debugging
     console.log('Attempting to send Slack message to channel:', {
       channelId: process.env.SLACK_CHANNEL_ID,
       tokenType: process.env.SLACK_BOT_TOKEN.startsWith('xoxb-') ? 'Bot Token' : 'Other'

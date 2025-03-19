@@ -31,17 +31,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       try {
-        // Create contact in HubSpot using standard properties
-        const response = await hubspotClient.crm.contacts.basicApi.create({
-          properties: {
-            email: email,
-            firstname: firstName,
-            phone: phone || "",
-            message: question // Using standard 'message' property instead of custom 'ad_question'
-          }
+        // First try to find if contact exists
+        console.log("Checking if contact exists in HubSpot...");
+        const searchResponse = await hubspotClient.crm.contacts.searchApi.doSearch({
+          filterGroups: [{
+            filters: [{
+              propertyName: 'email',
+              operator: 'EQ',
+              value: email
+            }]
+          }]
         });
 
-        console.log("HubSpot contact created:", response);
+        let response;
+        const properties = {
+          firstname: firstName,
+          email: email,
+          phone: phone || "",
+          message: question
+        };
+
+        if (searchResponse.total > 0) {
+          // Update existing contact
+          console.log("Updating existing HubSpot contact...");
+          const existingContact = searchResponse.results[0];
+          response = await hubspotClient.crm.contacts.basicApi.update(
+            existingContact.id,
+            { properties }
+          );
+        } else {
+          // Create new contact
+          console.log("Creating new HubSpot contact...");
+          response = await hubspotClient.crm.contacts.basicApi.create({
+            properties
+          });
+        }
+
+        console.log("HubSpot operation successful:", response);
 
         return res.status(200).json({ 
           success: true,
@@ -49,11 +75,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           data: response 
         });
 
-      } catch (error) {
-        console.error('Error creating HubSpot contact:', error);
+      } catch (error: any) {
+        console.error('Error with HubSpot operation:', error);
         return res.status(500).json({ 
           success: false, 
-          message: 'Error submitting lead' 
+          message: 'Error submitting lead',
+          error: error.message
         });
       }
     } catch (error: any) {

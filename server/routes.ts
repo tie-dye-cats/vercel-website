@@ -61,27 +61,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
           contactId = newContact.id;
         }
 
-        // Add contact to lists
+        // Add contact to lists using the proper API methods
         try {
-          // Add to Main List
-          await hubspotClient.lists.add({
-            listId: "MAIN_LIST_ID", // Replace with your actual list ID
-            emails: [email]
+          // Get the static lists
+          const listsResponse = await hubspotClient.crm.lists.getAll();
+
+          // Find the Main List and Homepage Form Leads list
+          for (const list of listsResponse.lists) {
+            if (list.name === "Main List" || list.name === "Homepage Question Form Leads") {
+              // Add contact to the list
+              await hubspotClient.crm.lists.addMember(list.listId, {
+                vids: [contactId]
+              });
+            }
+          }
+
+          // Trigger email workflow for new leads
+          await hubspotClient.automation.enrollments.create({
+            portalId: process.env.HUBSPOT_PORTAL_ID,
+            workflowId: process.env.HUBSPOT_WORKFLOW_ID,
+            contactIds: [contactId]
           });
 
-          // Add to Homepage Question Form Leads list
-          await hubspotClient.lists.add({
-            listId: "HOMEPAGE_LEADS_LIST_ID", // Replace with your actual list ID
-            emails: [email]
-          });
-
-          // Trigger automated workflow
-          await hubspotClient.automation.workflowsApi.enroll(
-            "WORKFLOW_ID", // Replace with your actual workflow ID
-            { contactId }
-          );
         } catch (error) {
           console.error('Error managing HubSpot lists:', error);
+          // Continue execution even if list management fails
         }
 
         // Send Slack notification

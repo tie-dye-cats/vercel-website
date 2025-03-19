@@ -15,49 +15,45 @@ export async function sendLeadNotification(leadData: {
       throw new Error("SLACK_CHANNEL_ID environment variable must be set");
     }
 
-    const message = {
-      channel: process.env.SLACK_CHANNEL_ID,
-      text: `New lead submitted from ${leadData.firstName}`, // Required fallback text
-      blocks: [
-        {
-          type: "header",
-          text: {
-            type: "plain_text",
-            text: "🎯 New Lead Submitted!",
-            emoji: true
-          }
-        },
-        {
-          type: "section",
-          fields: [
-            {
-              type: "mrkdwn",
-              text: `*Name:*\n${leadData.firstName}`
-            },
-            {
-              type: "mrkdwn",
-              text: `*Email:*\n${leadData.email}`
-            }
-          ]
-        },
-        {
-          type: "section",
-          fields: [
-            {
-              type: "mrkdwn",
-              text: `*Phone:*\n${leadData.phone || 'Not provided'}`
-            },
-            {
-              type: "mrkdwn",
-              text: `*Marketing Consent:*\n${leadData.marketingConsent ? '✅' : '❌'}`
-            }
-          ]
+    const messageBlocks = [
+      {
+        type: "header",
+        text: {
+          type: "plain_text",
+          text: "🎯 New Lead Submitted!",
+          emoji: true
         }
-      ]
-    };
+      },
+      {
+        type: "section",
+        fields: [
+          {
+            type: "mrkdwn",
+            text: `*Name:*\n${leadData.firstName}`
+          },
+          {
+            type: "mrkdwn",
+            text: `*Email:*\n${leadData.email}`
+          }
+        ]
+      },
+      {
+        type: "section",
+        fields: [
+          {
+            type: "mrkdwn",
+            text: `*Phone:*\n${leadData.phone || 'Not provided'}`
+          },
+          {
+            type: "mrkdwn",
+            text: `*Marketing Consent:*\n${leadData.marketingConsent ? '✅' : '❌'}`
+          }
+        ]
+      }
+    ];
 
     if (leadData.question) {
-      message.blocks.push({
+      messageBlocks.push({
         type: "section",
         text: {
           type: "mrkdwn",
@@ -66,7 +62,12 @@ export async function sendLeadNotification(leadData: {
       });
     }
 
-    await slack.chat.postMessage(message);
+    await slack.chat.postMessage({
+      channel: process.env.SLACK_CHANNEL_ID,
+      text: `New lead submitted from ${leadData.firstName}`, // Fallback text
+      blocks: messageBlocks
+    });
+
     console.log('Slack notification sent successfully');
   } catch (error) {
     console.error('Error sending Slack notification:', error);

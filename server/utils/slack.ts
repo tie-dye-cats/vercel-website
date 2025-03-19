@@ -15,57 +15,13 @@ export async function sendLeadNotification(leadData: {
       throw new Error("SLACK_CHANNEL_ID environment variable must be set");
     }
 
-    const messageBlocks = [
-      {
-        type: "header",
-        text: {
-          type: "plain_text",
-          text: "🎯 New Lead Submitted!",
-          emoji: true
-        }
-      },
-      {
-        type: "section",
-        fields: [
-          {
-            type: "mrkdwn",
-            text: `*Name:*\n${leadData.firstName}`
-          },
-          {
-            type: "mrkdwn",
-            text: `*Email:*\n${leadData.email}`
-          }
-        ]
-      },
-      {
-        type: "section",
-        fields: [
-          {
-            type: "mrkdwn",
-            text: `*Phone:*\n${leadData.phone || 'Not provided'}`
-          },
-          {
-            type: "mrkdwn",
-            text: `*Marketing Consent:*\n${leadData.marketingConsent ? '✅' : '❌'}`
-          }
-        ]
-      }
-    ];
-
-    if (leadData.question) {
-      messageBlocks.push({
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: `*Question:*\n${leadData.question}`
-        }
-      });
-    }
+    // Simple text-based message first
+    const messageText = `🎯 *New Lead Submitted!*\n\n*Name:* ${leadData.firstName}\n*Email:* ${leadData.email}\n*Phone:* ${leadData.phone || 'Not provided'}\n*Marketing Consent:* ${leadData.marketingConsent ? '✅' : '❌'}\n${leadData.question ? `\n*Question:*\n>${leadData.question}` : ''}`;
 
     await slack.chat.postMessage({
       channel: process.env.SLACK_CHANNEL_ID,
-      text: `New lead submitted from ${leadData.firstName}`, // Fallback text
-      blocks: messageBlocks
+      text: messageText,
+      mrkdwn: true
     });
 
     console.log('Slack notification sent successfully');

@@ -1,0 +1,85 @@
+// server/index.ts
+
+import express, { Request, Response } from 'express';
+import { WebClient } from '@slack/web-api';
+import dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();
+
+const app = express();
+const PORT = 5000;
+
+// Use express.json() middleware to parse JSON bodies
+app.use(express.json());
+
+// Ensure you have a valid Bot User OAuth Token from Slack in your environment variables.
+// This token should start with "xoxb-"
+const slackToken = process.env.SLACK_BOT_TOKEN; // <-- PLACEHOLDER: set your Slack Bot token in your .env file
+if (!slackToken) {
+  console.error('Missing Slack Bot Token. Please set SLACK_BOT_TOKEN in your environment.');
+  process.exit(1);
+}
+
+const slackClient = new WebClient(slackToken);
+
+/**
+ * Cleans the lead submission data.
+ *
+ * @param data The raw data object from the request body.
+ * @returns The cleaned data object.
+ */
+const cleanLeadData = (data: any) => {
+  return {
+    firstName: String(data.firstName || '').trim(),
+    email: String(data.email || '').trim().toLowerCase(),
+    phone: String(data.phone || '').replace(/\D/g, ''), // remove non-digit characters
+    question: String(data.question || '').trim(),
+    marketingConsent: Boolean(data.marketingConsent),
+    communicationConsent: Boolean(data.communicationConsent)
+  };
+};
+
+/**
+ * Sends a message to Slack using chat.postMessage.
+ *
+ * @param channel The Slack channel ID or name (e.g., '#general' or 'C12345678').
+ * @param message The message to send.
+ */
+const sendSlackNotification = async (channel: string, message: string) => {
+  try {
+    // The text property is required for chat.postMessage
+    const response = await slackClient.chat.postMessage({
+      channel, 
+      text: message // <-- text property is included here
+      // Optionally, you can add blocks, attachments, etc.
+    });
+    console.log('Slack message sent successfully:', response);
+  } catch (error) {
+    console.error('Error sending Slack notification:', error);
+  }
+};
+
+app.post('/api/leads', async (req: Request, res: Response) => {
+  // Clean the incoming data
+  const cleanedData = cleanLeadData(req.body);
+  console.log('Received lead submission:', cleanedData);
+
+  // Example: Logic to check and update a contact in HubSpot would go here.
+  // For now, we simulate a HubSpot update and then send a Slack notification.
+
+  // Send a Slack notification with the cleaned lead data.
+  // Replace '#your-slack-channel' with your actual Slack channel name or ID.
+  await sendSlackNotification('#your-slack-channel', `New lead from ${cleanedData.firstName}`);
+
+  // Respond back to the client
+  res.status(200).json({
+    success: true,
+    message: "Thank you! We'll get back to you within 1 hour.",
+    data: { contactId: '95249821412' } // This is an example contact ID.
+  });
+});
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});

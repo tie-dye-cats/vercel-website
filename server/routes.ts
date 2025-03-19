@@ -3,7 +3,17 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { Client } from "@hubspot/api-client";
 
-const hubspotClient = new Client({ accessToken: process.env.HUBSPOT_ACCESS_TOKEN });
+let hubspotClient: Client;
+try {
+  if (!process.env.HUBSPOT_ACCESS_TOKEN) {
+    throw new Error("HUBSPOT_ACCESS_TOKEN is not configured");
+  }
+  hubspotClient = new Client({ accessToken: process.env.HUBSPOT_ACCESS_TOKEN });
+  console.log("HubSpot client initialized successfully");
+} catch (error) {
+  console.error("Failed to initialize HubSpot client:", error);
+  throw error;
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Lead submission endpoint

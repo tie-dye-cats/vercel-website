@@ -31,7 +31,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       try {
-        // First try to find if contact exists
+        // Check if contact exists in HubSpot
         console.log("Checking if contact exists in HubSpot...");
         const searchResponse = await hubspotClient.crm.contacts.searchApi.doSearch({
           filterGroups: [{
@@ -45,8 +45,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         let response;
         const properties = {
-          firstname: firstName,
           email: email,
+          firstname: firstName,
           phone: phone || "",
           message: question
         };
@@ -93,6 +93,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  const httpServer = createServer(app);
-  return httpServer;
+  const server = createServer(app);
+  return server;
 }

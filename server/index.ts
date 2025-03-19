@@ -47,7 +47,10 @@ app.use((req, res, next) => {
       console.error("Server error:", err);
       const status = err.status || err.statusCode || 500;
       const message = err.message || "Internal Server Error";
-      res.status(status).json({ message });
+      res.status(status).json({ 
+        success: false,
+        message: message
+      });
     });
 
     // Setup Vite in development

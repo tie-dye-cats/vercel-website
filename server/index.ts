@@ -38,11 +38,16 @@ app.use((req, res, next) => {
     log("Starting server initialization...");
 
     // Check required environment variables
-    const requiredEnvVars = ['SLACK_BOT_TOKEN', 'HUBSPOT_ACCESS_TOKEN'];
+    const requiredEnvVars = ['HUBSPOT_ACCESS_TOKEN'];
     const missingVars = requiredEnvVars.filter(v => !process.env[v]);
 
     if (missingVars.length > 0) {
       throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+    }
+
+    // Log optional environment variables status
+    if (!process.env.SLACK_BOT_TOKEN) {
+      log("Warning: SLACK_BOT_TOKEN not configured. Slack notifications will be disabled.");
     }
 
     const server = await registerRoutes(app);

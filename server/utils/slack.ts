@@ -5,40 +5,14 @@ const cleanToken = (token: string) => {
   return token.trim();
 };
 
-// Initialize the Slack client with more detailed error handling
+// Initialize the Slack client without immediate validation
 const rawToken = process.env.SLACK_BOT_TOKEN;
 if (!rawToken) {
   console.error('Missing Slack Bot Token. Please set SLACK_BOT_TOKEN in your environment.');
-  process.exit(1);
 }
 
-// Clean and validate token
-const token = cleanToken(rawToken);
-if (!token.startsWith("xoxb-")) {
-  console.error("Invalid token type. Please ensure you're using a valid bot token (should start with 'xoxb-').");
-  process.exit(1);
-}
-
+const token = rawToken ? cleanToken(rawToken) : '';
 const slackClient = new WebClient(token);
-
-// Verify token on initialization
-(async () => {
-  try {
-    const authTest = await slackClient.auth.test();
-    console.log('Slack authentication successful:', {
-      user_id: authTest.user_id,
-      team_id: authTest.team_id,
-      bot_id: authTest.bot_id
-    });
-  } catch (error: any) {
-    console.error('Slack authentication failed:', {
-      error: error.message,
-      code: error.code,
-      data: error.data
-    });
-    process.exit(1);
-  }
-})();
 
 /**
  * Cleans the lead submission data.
@@ -66,6 +40,17 @@ export async function sendLeadNotification(leadData: {
   communicationConsent?: boolean;
 }) {
   try {
+    // Validate token before sending
+    if (!token) {
+      console.error('Cannot send Slack notification: Missing SLACK_BOT_TOKEN');
+      return;
+    }
+
+    if (!token.startsWith("xoxb-")) {
+      console.error('Cannot send Slack notification: Invalid token type (should start with "xoxb-")');
+      return;
+    }
+
     console.log('Attempting to send Slack notification with data:', leadData);
 
     // Clean the data
@@ -98,6 +83,6 @@ export async function sendLeadNotification(leadData: {
       data: error.data,
       stack: error.stack
     });
-    throw error;  // Re-throw to be handled by the API route
+    // Don't throw the error - just log it and continue
   }
 }

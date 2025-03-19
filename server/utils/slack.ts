@@ -18,15 +18,54 @@ export async function sendLeadNotification(leadData: {
       return;
     }
 
-    // Try to send the message
-    console.log('Attempting to send Slack message with token type:', 
-      process.env.SLACK_BOT_TOKEN.startsWith('xoxb-') ? 'Bot Token' : 'Other Token Type');
+    // Format message with markdown
+    const message = {
+      channel: '#ticketpeak',
+      blocks: [
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: "🎯 *New Lead Notification*"
+          }
+        },
+        {
+          type: "section",
+          fields: [
+            {
+              type: "mrkdwn",
+              text: `*Name:*\n${leadData.firstName}`
+            },
+            {
+              type: "mrkdwn",
+              text: `*Email:*\n${leadData.email}`
+            },
+            {
+              type: "mrkdwn",
+              text: `*Phone:*\n${leadData.phone || 'Not provided'}`
+            },
+            {
+              type: "mrkdwn",
+              text: `*Marketing Consent:*\n${leadData.marketingConsent ? '✅' : '❌'}`
+            }
+          ]
+        }
+      ]
+    };
 
-    const result = await slack.chat.postMessage({
-      channel: '#ticketpeak',  // Using channel name with # prefix
-      text: `New Lead Notification 🎯\n*Name:* ${leadData.firstName}\n*Email:* ${leadData.email}\n*Phone:* ${leadData.phone || 'Not provided'}\n*Marketing Consent:* ${leadData.marketingConsent ? '✅' : '❌'}${leadData.question ? `\n*Question:*\n>${leadData.question}` : ''}`,
-      parse: 'full'
-    });
+    // Add question if provided
+    if (leadData.question) {
+      message.blocks.push({
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `*Question:*\n>${leadData.question}`
+        }
+      });
+    }
+
+    // Send message and handle response
+    const result = await slack.chat.postMessage(message);
 
     if (result.ok) {
       console.log('Successfully sent Slack notification');

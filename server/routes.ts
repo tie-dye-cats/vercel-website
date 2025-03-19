@@ -7,8 +7,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Lead submission endpoint
   app.post("/api/leads", async (req, res) => {
     try {
-      const { firstName, email, phone, question } = req.body;
-      console.log("Received lead submission:", { firstName, email, phone, question });
+      const { firstName, email, phone, question, marketingConsent, communicationConsent } = req.body;
+      console.log("Received lead submission:", { firstName, email, phone, question, marketingConsent, communicationConsent });
 
       if (!email) {
         return res.status(400).json({ 
@@ -38,7 +38,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: email,
           firstname: firstName,
           phone: phone || "",
-          message: question
+          message: question,
+          hs_legal_basis: communicationConsent ? "Legitimate interest" : "Not specified",
+          hs_marketing_consent: marketingConsent ? "Yes" : "No"
         };
 
         if (searchResponse.total > 0) {
@@ -66,15 +68,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
       } catch (error: any) {
-        console.error('Error with HubSpot operation:', error);
+        console.error('Error with HubSpot operation:', error.message);
+        console.error('Full error details:', error);
         return res.status(500).json({ 
           success: false, 
-          message: 'Error submitting lead',
+          message: 'Error submitting lead. Please try again.',
           error: error.message
         });
       }
     } catch (error: any) {
-      console.error("API Error:", error);
+      console.error("API Error:", error.message);
+      console.error("Full error stack:", error);
       res.status(500).json({ 
         success: false, 
         message: "There was a problem submitting your information. Please try again.",

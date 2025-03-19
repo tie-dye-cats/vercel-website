@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { Client } from "@hubspot/api-client";
+import { sendLeadNotification } from "./utils/slack";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Lead submission endpoint
@@ -33,7 +34,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }]
         });
 
-        let response;
+        let contactId;
         const properties = {
           email: email,
           firstname: firstName,
@@ -46,24 +47,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Update existing contact
           console.log("Updating existing HubSpot contact...");
           const existingContact = searchResponse.results[0];
-          response = await hubspotClient.crm.contacts.basicApi.update(
+          contactId = existingContact.id;
+          await hubspotClient.crm.contacts.basicApi.update(
             existingContact.id,
             { properties }
           );
         } else {
           // Create new contact
           console.log("Creating new HubSpot contact...");
-          response = await hubspotClient.crm.contacts.basicApi.create({
+          const newContact = await hubspotClient.crm.contacts.basicApi.create({
             properties
           });
+          contactId = newContact.id;
         }
 
-        console.log("HubSpot operation successful:", response);
+        // Add contact to lists
+        try {
+          // Add to Main List
+          await hubspotClient.lists.add({
+            listId: "MAIN_LIST_ID", // Replace with your actual list ID
+            emails: [email]
+          });
+
+          // Add to Homepage Question Form Leads list
+          await hubspotClient.lists.add({
+            listId: "HOMEPAGE_LEADS_LIST_ID", // Replace with your actual list ID
+            emails: [email]
+          });
+
+          // Trigger automated workflow
+          await hubspotClient.automation.workflowsApi.enroll(
+            "WORKFLOW_ID", // Replace with your actual workflow ID
+            { contactId }
+          );
+        } catch (error) {
+          console.error('Error managing HubSpot lists:', error);
+        }
+
+        // Send Slack notification
+        await sendLeadNotification({
+          firstName,
+          email,
+          phone,
+          question
+        });
 
         return res.status(200).json({ 
           success: true,
           message: "Thank you! We'll get back to you within 1 hour.",
-          data: response 
+          data: { contactId } 
         });
 
       } catch (error: any) {

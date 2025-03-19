@@ -1,16 +1,44 @@
 import { WebClient } from "@slack/web-api";
 
+// Utility function to clean the token
+const cleanToken = (token: string) => {
+  return token.trim();
+};
+
 // Initialize the Slack client with more detailed error handling
-const slackToken = process.env.SLACK_BOT_TOKEN;
-if (!slackToken) {
+const rawToken = process.env.SLACK_BOT_TOKEN;
+if (!rawToken) {
   console.error('Missing Slack Bot Token. Please set SLACK_BOT_TOKEN in your environment.');
   process.exit(1);
 }
 
-const slackClient = new WebClient(slackToken);
+// Clean and validate token
+const token = cleanToken(rawToken);
+if (!token.startsWith("xoxb-")) {
+  console.error("Invalid token type. Please ensure you're using a valid bot token (should start with 'xoxb-').");
+  process.exit(1);
+}
 
-// Debug log the token type
-console.log('Slack token type:', slackToken.startsWith('xoxb-') ? 'Bot Token' : 'Other Token Type');
+const slackClient = new WebClient(token);
+
+// Verify token on initialization
+(async () => {
+  try {
+    const authTest = await slackClient.auth.test();
+    console.log('Slack authentication successful:', {
+      user_id: authTest.user_id,
+      team_id: authTest.team_id,
+      bot_id: authTest.bot_id
+    });
+  } catch (error: any) {
+    console.error('Slack authentication failed:', {
+      error: error.message,
+      code: error.code,
+      data: error.data
+    });
+    process.exit(1);
+  }
+})();
 
 /**
  * Cleans the lead submission data.

@@ -23,19 +23,17 @@ export async function sendLeadNotification(leadData: {
       return;
     }
 
-    // Create a simple text message
-    const messageText = `New Lead: ${leadData.firstName}\nEmail: ${leadData.email}${leadData.phone ? `\nPhone: ${leadData.phone}` : ''}${leadData.question ? `\nQuestion: ${leadData.question}` : ''}`;
-
     // Log the attempt
     console.log('Attempting to send Slack message to channel:', {
       channelId: process.env.SLACK_CHANNEL_ID,
-      hasToken: !!process.env.SLACK_BOT_TOKEN
+      tokenType: process.env.SLACK_BOT_TOKEN.startsWith('xoxb-') ? 'Bot Token' : 'Other'
     });
 
     // Try to send the message
     const result = await slack.chat.postMessage({
       channel: process.env.SLACK_CHANNEL_ID,
-      text: messageText
+      text: `New Lead Notification 🎯\n*Name:* ${leadData.firstName}\n*Email:* ${leadData.email}\n*Phone:* ${leadData.phone || 'Not provided'}\n*Marketing Consent:* ${leadData.marketingConsent ? '✅' : '❌'}${leadData.question ? `\n*Question:*\n>${leadData.question}` : ''}`,
+      parse: 'full'
     });
 
     if (result.ok) {

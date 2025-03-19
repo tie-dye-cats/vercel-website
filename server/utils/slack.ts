@@ -11,22 +11,38 @@ export async function sendLeadNotification(leadData: {
   communicationConsent?: boolean;
 }) {
   try {
-    if (!process.env.SLACK_CHANNEL_ID) {
-      throw new Error("SLACK_CHANNEL_ID environment variable must be set");
+    if (!process.env.SLACK_BOT_TOKEN) {
+      console.error('SLACK_BOT_TOKEN is not configured');
+      return;
     }
 
-    // Simple text-based message first
+    if (!process.env.SLACK_CHANNEL_ID) {
+      console.error('SLACK_CHANNEL_ID is not configured');
+      return;
+    }
+
+    // Simple text-based message with markdown formatting
     const messageText = `🎯 *New Lead Submitted!*\n\n*Name:* ${leadData.firstName}\n*Email:* ${leadData.email}\n*Phone:* ${leadData.phone || 'Not provided'}\n*Marketing Consent:* ${leadData.marketingConsent ? '✅' : '❌'}\n${leadData.question ? `\n*Question:*\n>${leadData.question}` : ''}`;
 
-    await slack.chat.postMessage({
+    console.log('Attempting to send Slack notification to channel:', process.env.SLACK_CHANNEL_ID);
+
+    const result = await slack.chat.postMessage({
       channel: process.env.SLACK_CHANNEL_ID,
       text: messageText,
       mrkdwn: true
     });
 
-    console.log('Slack notification sent successfully');
-  } catch (error) {
-    console.error('Error sending Slack notification:', error);
+    if (result.ok) {
+      console.log('Slack notification sent successfully');
+    } else {
+      console.error('Failed to send Slack notification:', result.error);
+    }
+  } catch (error: any) {
+    console.error('Error sending Slack notification:', {
+      error: error.message,
+      code: error.code,
+      data: error.data
+    });
     // Don't throw the error to prevent blocking the main flow
   }
 }

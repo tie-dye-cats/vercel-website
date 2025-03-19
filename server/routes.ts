@@ -3,7 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { Client } from "@hubspot/api-client";
 
-let hubspotClient: Client;
+// Initialize HubSpot client
+let hubspotClient: any;
 try {
   if (!process.env.HUBSPOT_ACCESS_TOKEN) {
     throw new Error("HUBSPOT_ACCESS_TOKEN is not configured");
@@ -19,38 +20,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Lead submission endpoint
   app.post("/api/leads", async (req, res) => {
     try {
-      const { firstName, email, phone, question, marketingConsent, communicationConsent } = req.body;
+      const { firstName, email, phone, question } = req.body;
       console.log("Received lead submission:", { firstName, email, phone, question });
 
-      if (!firstName || !email || !question) {
-        return res.status(400).json({
-          success: false,
-          message: "Missing required fields"
+      if (!email) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Email is required' 
         });
       }
 
-      const contactProperties = {
-        firstname: firstName,
-        lastname: "", // Empty string since we're not collecting last name
-        email: email,
-        phone: phone || "",
-        ad_question: question,
-        marketing_consent: marketingConsent ? "Yes" : "No",
-        communication_consent: communicationConsent ? "Yes" : "No",
-      };
+      try {
+        // Create contact in HubSpot
+        const response = await hubspotClient.crm.contacts.basicApi.create({
+          properties: {
+            email: email,
+            firstname: firstName,
+            phone: phone || "",
+            ad_question: question
+          }
+        });
 
-      // Create new contact in HubSpot
-      console.log("Creating HubSpot contact...");
-      const hubspotResponse = await hubspotClient.crm.contacts.basicApi.create({
-        properties: contactProperties
-      });
-      console.log("HubSpot contact created successfully:", hubspotResponse);
+        console.log("HubSpot contact created:", response);
 
-      res.json({ 
-        success: true, 
-        message: "Thank you! We'll get back to you within 1 hour.",
-        contact: hubspotResponse 
-      });
+        return res.status(200).json({ 
+          success: true,
+          message: "Thank you! We'll get back to you within 1 hour.",
+          data: response 
+        });
+
+      } catch (error) {
+        console.error('Error creating HubSpot contact:', error);
+        return res.status(500).json({ 
+          success: false, 
+          message: 'Error submitting lead' 
+        });
+      }
     } catch (error: any) {
       console.error("API Error:", error);
       res.status(500).json({ 

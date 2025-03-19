@@ -63,16 +63,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Add contact to lists using the proper API methods
         try {
-          // Use contactLists API to add contact to the Main List
-          await hubspotClient.crm.contacts.associationsApi.create(
-            contactId,
-            'contact_list',
-            process.env.HUBSPOT_MAIN_LIST_ID,
-            [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 1 }]
-          );
+          // Only attempt to add to list if ID is configured
+          if (process.env.HUBSPOT_MAIN_LIST_ID) {
+            await hubspotClient.crm.contacts.associationsApi.create(
+              contactId,
+              'contact_list',
+              process.env.HUBSPOT_MAIN_LIST_ID,
+              [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 1 }]
+            );
+          }
 
-          // Trigger email workflow for new leads if workflow ID is configured
-          if (process.env.HUBSPOT_WORKFLOW_ID) {
+          // Only trigger workflow if IDs are configured
+          if (process.env.HUBSPOT_WORKFLOW_ID && process.env.HUBSPOT_PORTAL_ID) {
             await hubspotClient.automation.enrollments.create({
               portalId: process.env.HUBSPOT_PORTAL_ID,
               workflowId: process.env.HUBSPOT_WORKFLOW_ID,

@@ -21,28 +21,40 @@ export async function sendLeadNotification(leadData: {
       return;
     }
 
-    // Simple text-based message with markdown formatting
-    const messageText = `🎯 *New Lead Submitted!*\n\n*Name:* ${leadData.firstName}\n*Email:* ${leadData.email}\n*Phone:* ${leadData.phone || 'Not provided'}\n*Marketing Consent:* ${leadData.marketingConsent ? '✅' : '❌'}\n${leadData.question ? `\n*Question:*\n>${leadData.question}` : ''}`;
+    console.log('Attempting to send Slack notification with:', {
+      channel: process.env.SLACK_CHANNEL_ID,
+      botToken: process.env.SLACK_BOT_TOKEN ? 'Present' : 'Missing'
+    });
 
-    console.log('Attempting to send Slack notification to channel:', process.env.SLACK_CHANNEL_ID);
-
+    // Start with a simple message to test connectivity
     const result = await slack.chat.postMessage({
       channel: process.env.SLACK_CHANNEL_ID,
-      text: messageText,
-      mrkdwn: true
+      text: `New lead: ${leadData.firstName} (${leadData.email})`,
     });
 
     if (result.ok) {
-      console.log('Slack notification sent successfully');
+      console.log('Basic Slack notification sent successfully');
+
+      // If basic message works, send the detailed message
+      const detailedResult = await slack.chat.postMessage({
+        channel: process.env.SLACK_CHANNEL_ID,
+        text: `🎯 *New Lead Submitted!*\n\n*Name:* ${leadData.firstName}\n*Email:* ${leadData.email}\n*Phone:* ${leadData.phone || 'Not provided'}\n*Marketing Consent:* ${leadData.marketingConsent ? '✅' : '❌'}\n${leadData.question ? `\n*Question:*\n>${leadData.question}` : ''}`,
+        mrkdwn: true
+      });
+
+      if (detailedResult.ok) {
+        console.log('Detailed Slack notification sent successfully');
+      } else {
+        console.error('Failed to send detailed notification:', detailedResult.error);
+      }
     } else {
-      console.error('Failed to send Slack notification:', result.error);
+      console.error('Failed to send basic notification:', result.error);
     }
   } catch (error: any) {
     console.error('Error sending Slack notification:', {
-      error: error.message,
+      message: error.message,
       code: error.code,
       data: error.data
     });
-    // Don't throw the error to prevent blocking the main flow
   }
 }

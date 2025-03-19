@@ -18,14 +18,12 @@ export async function sendLeadNotification(leadData: {
       return;
     }
 
-    if (!process.env.SLACK_CHANNEL_ID) {
-      console.error('SLACK_CHANNEL_ID is not configured');
-      return;
-    }
-
     // Try to send the message
+    console.log('Attempting to send Slack message with token type:', 
+      process.env.SLACK_BOT_TOKEN.startsWith('xoxb-') ? 'Bot Token' : 'Other Token Type');
+
     const result = await slack.chat.postMessage({
-      channel: 'ticketpeak',
+      channel: '#ticketpeak',  // Using channel name with # prefix
       text: `New Lead Notification 🎯\n*Name:* ${leadData.firstName}\n*Email:* ${leadData.email}\n*Phone:* ${leadData.phone || 'Not provided'}\n*Marketing Consent:* ${leadData.marketingConsent ? '✅' : '❌'}${leadData.question ? `\n*Question:*\n>${leadData.question}` : ''}`,
       parse: 'full'
     });
@@ -41,7 +39,8 @@ export async function sendLeadNotification(leadData: {
     console.error('Error sending Slack notification:', {
       message: error.message,
       code: error.code,
-      data: error.data
+      data: error.data,
+      stack: error.stack
     });
   }
 }

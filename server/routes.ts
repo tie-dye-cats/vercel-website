@@ -63,25 +63,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Add contact to lists using the proper API methods
         try {
-          // Get the static lists
-          const listsResponse = await hubspotClient.crm.lists.getAll();
+          // Use contactLists API to add contact to the Main List
+          await hubspotClient.crm.contacts.associationsApi.create(
+            contactId,
+            'contact_list',
+            process.env.HUBSPOT_MAIN_LIST_ID,
+            [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 1 }]
+          );
 
-          // Find the Main List and Homepage Form Leads list
-          for (const list of listsResponse.lists) {
-            if (list.name === "Main List" || list.name === "Homepage Question Form Leads") {
-              // Add contact to the list
-              await hubspotClient.crm.lists.addMember(list.listId, {
-                vids: [contactId]
-              });
-            }
+          // Trigger email workflow for new leads if workflow ID is configured
+          if (process.env.HUBSPOT_WORKFLOW_ID) {
+            await hubspotClient.automation.enrollments.create({
+              portalId: process.env.HUBSPOT_PORTAL_ID,
+              workflowId: process.env.HUBSPOT_WORKFLOW_ID,
+              contactIds: [contactId]
+            });
           }
-
-          // Trigger email workflow for new leads
-          await hubspotClient.automation.enrollments.create({
-            portalId: process.env.HUBSPOT_PORTAL_ID,
-            workflowId: process.env.HUBSPOT_WORKFLOW_ID,
-            contactIds: [contactId]
-          });
 
         } catch (error) {
           console.error('Error managing HubSpot lists:', error);
@@ -93,7 +90,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           firstName,
           email,
           phone,
-          question
+          question,
+          marketingConsent,
+          communicationConsent
         });
 
         return res.status(200).json({ 

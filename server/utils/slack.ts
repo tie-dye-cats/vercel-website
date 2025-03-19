@@ -7,6 +7,8 @@ export async function sendLeadNotification(leadData: {
   email: string;
   phone?: string;
   question?: string;
+  marketingConsent?: boolean;
+  communicationConsent?: boolean;
 }) {
   try {
     const message = {
@@ -39,6 +41,10 @@ export async function sendLeadNotification(leadData: {
             {
               type: "mrkdwn",
               text: `*Phone:*\n${leadData.phone || 'Not provided'}`
+            },
+            {
+              type: "mrkdwn",
+              text: `*Marketing Consent:*\n${leadData.marketingConsent ? '✅' : '❌'}`
             }
           ]
         }
@@ -56,6 +62,7 @@ export async function sendLeadNotification(leadData: {
     }
 
     await slack.chat.postMessage(message);
+    console.log('Slack notification sent successfully');
   } catch (error) {
     console.error('Error sending Slack notification:', error);
     // Don't throw the error to prevent blocking the main flow

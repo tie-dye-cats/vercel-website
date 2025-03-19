@@ -39,8 +39,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           firstname: firstName,
           phone: phone || "",
           message: question,
-          hs_legal_basis: communicationConsent ? "Legitimate interest" : "Not specified",
-          hs_marketing_consent: marketingConsent ? "Yes" : "No"
+          hs_legal_basis: communicationConsent ? "Legitimate interest" : "Not applicable"
         };
 
         if (searchResponse.total > 0) {
@@ -73,7 +72,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ 
           success: false, 
           message: 'Error submitting lead. Please try again.',
-          error: error.message
+          error: error.message 
         });
       }
     } catch (error: any) {

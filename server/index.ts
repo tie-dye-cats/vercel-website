@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
+// Load environment variables first
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -36,9 +37,12 @@ app.use((req, res, next) => {
   try {
     log("Starting server initialization...");
 
-    // Verify environment variables
-    if (!process.env.HUBSPOT_ACCESS_TOKEN) {
-      throw new Error("HUBSPOT_ACCESS_TOKEN is not configured");
+    // Check required environment variables
+    const requiredEnvVars = ['SLACK_BOT_TOKEN', 'HUBSPOT_ACCESS_TOKEN'];
+    const missingVars = requiredEnvVars.filter(v => !process.env[v]);
+
+    if (missingVars.length > 0) {
+      throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
     }
 
     const server = await registerRoutes(app);

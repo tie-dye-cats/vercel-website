@@ -15,6 +15,14 @@ const token = rawToken ? cleanToken(rawToken) : '';
 const slackClient = new WebClient(token);
 
 /**
+ * Validates the Slack token format
+ */
+const isValidToken = (token: string): boolean => {
+  // Accept both bot tokens and user tokens
+  return token.startsWith('xoxb-') || token.startsWith('xoxe.xoxp-');
+};
+
+/**
  * Cleans the lead submission data.
  */
 const cleanLeadData = (data: any) => {
@@ -46,8 +54,9 @@ export async function sendLeadNotification(leadData: {
       return;
     }
 
-    if (!token.startsWith("xoxb-")) {
-      console.error('Cannot send Slack notification: Invalid token type (should start with "xoxb-")');
+    if (!isValidToken(token)) {
+      console.error('Cannot send Slack notification: Invalid token format');
+      console.log('Token prefix:', token.substring(0, 8)); // Log only the prefix for debugging
       return;
     }
 

@@ -19,7 +19,7 @@ const slackClient = new WebClient(token);
  */
 const isValidToken = (token: string): boolean => {
   // Accept both bot tokens and user tokens
-  return token.startsWith('xoxb-') || token.startsWith('xoxe.xoxp-');
+  return token.startsWith('xoxb-') || token.startsWith('xoxp-') || token.startsWith('xoxe.xoxp-');
 };
 
 /**

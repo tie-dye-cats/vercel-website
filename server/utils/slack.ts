@@ -1,81 +1,32 @@
-import { WebClient } from "@slack/web-api";
+import { WebClient } from '@slack/web-api';
 
-// Utility function to clean the token
-const cleanToken = (token: string) => {
-  return token.trim();
-};
+const slackClient = process.env.SLACK_BOT_TOKEN ? new WebClient(process.env.SLACK_BOT_TOKEN) : null;
 
-// Initialize the Slack client without immediate validation
-const rawToken = process.env.SLACK_BOT_TOKEN;
-if (!rawToken) {
-  console.error('Missing Slack Bot Token. Please set SLACK_BOT_TOKEN in your environment.');
-}
-
-const token = rawToken ? cleanToken(rawToken) : '';
-const slackClient = new WebClient(token);
-
-/**
- * Validates the Slack token format
- */
-const isValidToken = (token: string): boolean => {
-  // Accept both bot tokens and user tokens
-  return token.startsWith('xoxb-') || token.startsWith('xoxp-') || token.startsWith('xoxe.xoxp-');
-};
-
-/**
- * Cleans the lead submission data.
- */
-const cleanLeadData = (data: any) => {
-  return {
-    firstName: String(data.firstName || '').trim(),
-    email: String(data.email || '').trim().toLowerCase(),
-    phone: String(data.phone || '').replace(/\D/g, ''), // remove non-digit characters
-    question: String(data.question || '').trim(),
-    marketingConsent: Boolean(data.marketingConsent),
-    communicationConsent: Boolean(data.communicationConsent)
-  };
-};
-
-/**
- * Sends a message to Slack using chat.postMessage.
- */
-export async function sendLeadNotification(leadData: {
-  firstName: string;
-  email: string;
-  phone?: string;
-  question?: string;
-  marketingConsent?: boolean;
-  communicationConsent?: boolean;
+export async function sendSlackNotification(data: {
+  name?: string;
+  email?: string;
+  message?: string;
+  channel?: string;
 }) {
+  if (!slackClient) {
+    console.log('Slack notifications disabled - no SLACK_BOT_TOKEN configured');
+    return;
+  }
+
   try {
-    // Validate token before sending
-    if (!token) {
-      console.error('Cannot send Slack notification: Missing SLACK_BOT_TOKEN');
-      return;
-    }
-
-    if (!isValidToken(token)) {
-      console.error('Cannot send Slack notification: Invalid token format');
-      console.log('Token prefix:', token.substring(0, 8)); // Log only the prefix for debugging
-      return;
-    }
-
-    console.log('Attempting to send Slack notification with data:', leadData);
-
-    // Clean the data
-    const cleanedData = cleanLeadData(leadData);
-
-    // Format the message
-    const message = `New lead from ${cleanedData.firstName}\nEmail: ${cleanedData.email}\nPhone: ${cleanedData.phone || 'Not provided'}\nQuestion: ${cleanedData.question || 'None'}\nMarketing Consent: ${cleanedData.marketingConsent ? 'Yes' : 'No'}`;
+    const channel = data.channel || '#ticketpeak';
+    const message = `New Form Submission:
+Name: ${data.name || 'N/A'}
+Email: ${data.email || 'N/A'}
+Message: ${data.message || 'N/A'}`;
 
     console.log('Sending message to Slack:', {
-      channel: '#ticketpeak',
+      channel,
       messageLength: message.length
     });
 
-    // Send to Slack
     const response = await slackClient.chat.postMessage({
-      channel: '#ticketpeak',
+      channel,
       text: message
     });
 
@@ -85,6 +36,8 @@ export async function sendLeadNotification(leadData: {
       channel: response.channel
     });
 
+    return response;
+
   } catch (error: any) {
     console.error('Error sending Slack notification:', {
       error: error.message,
@@ -92,6 +45,6 @@ export async function sendLeadNotification(leadData: {
       data: error.data,
       stack: error.stack
     });
-    // Don't throw the error - just log it and continue
+    throw error;
   }
 }

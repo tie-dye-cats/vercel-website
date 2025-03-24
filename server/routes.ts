@@ -5,6 +5,27 @@ import { Client } from "@hubspot/api-client";
 import { sendLeadNotification } from "./utils/slack";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Form submission endpoint
+  app.post("/api/form", async (req, res) => {
+    try {
+      const { name, email, message } = req.body;
+      
+      await sendSlackNotification({ name, email, message });
+      
+      return res.status(200).json({ 
+        success: true,
+        message: "Form submission successful"
+      });
+    } catch (error: any) {
+      console.error("Form submission error:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Error submitting form",
+        error: error.message 
+      });
+    }
+  });
+
   // Lead submission endpoint
   app.post("/api/leads", async (req, res) => {
     try {

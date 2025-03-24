@@ -29,29 +29,7 @@ export async function sendLeadNotification(data: {
 • Communication Consent: ${data.communicationConsent ? 'Yes' : 'No'}`
     });
   } catch (error) {
-    console.error("Error sending Slack notification:", error);
-  }
-}
-
-export async function sendSlackNotification(data: {
-  name: string;
-  email: string;
-  message: string;
-}) {
-  if (!slackClient) {
-    console.log("Slack notifications disabled - no SLACK_BOT_TOKEN configured");
-    return;
-  }
-
-  try {
-    await slackClient.chat.postMessage({
-      channel: process.env.SLACK_CHANNEL_ID || "general",
-      text: `New Form Submission:
-• Name: ${data.name}
-• Email: ${data.email}
-• Message: ${data.message}`
-    });
-  } catch (error) {
-    console.error("Error sending Slack notification:", error);
+    console.error("Slack notification failed - continuing without sending notification");
+    console.debug("Slack error details:", error);
   }
 }

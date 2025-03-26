@@ -2,79 +2,60 @@ import 'dotenv/config';
 import express from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { createServer } from "http";
 
-// Load environment variables first
 const app = express();
+
+// Basic middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Add request logging middleware
+// API request logging
 app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
-
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-      log(logLine);
-    }
-  });
-
+  if (req.path.startsWith("/api")) {
+    const start = Date.now();
+    res.on("finish", () => {
+      const duration = Date.now() - start;
+      log(`${req.method} ${req.path} ${res.statusCode} in ${duration}ms`);
+    });
+  }
   next();
 });
 
-// Log environment variables status
-if (!process.env.SLACK_BOT_TOKEN) {
-  log("Warning: SLACK_BOT_TOKEN not configured. Slack notifications will be disabled.");
-}
-if (!process.env.BREVO_API_KEY) {
-  log("Warning: BREVO_API_KEY not configured. Email notifications will be disabled.");
-}
+// Check required environment variables
+const requiredEnvVars = {
+  SLACK_BOT_TOKEN: "Slack notifications",
+  BREVO_API_KEY: "Email notifications",
+};
+
+Object.entries(requiredEnvVars).forEach(([key, feature]) => {
+  if (!process.env[key]) {
+    log(`Warning: ${key} not configured. ${feature} will be disabled.`);
+  }
+});
 
 // Register API routes
 registerRoutes(app);
 
-// Error handling middleware
+// Error handling
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error("Server error:", err);
-  const status = err.status || err.statusCode || 500;
-  const message = err.message || "Internal Server Error";
-  res.status(status).json({ 
+  res.status(err.status || 500).json({ 
     success: false,
-    message: message
+    message: err.message || "Internal Server Error"
   });
 });
 
-// Setup Vite in development or serve static files in production
+// Setup static files or Vite middleware
 if (process.env.NODE_ENV === "development") {
-  log("Setting up Vite middleware...");
-  const server = createServer(app);
-  setupVite(app, server);
-  log("Vite middleware setup complete");
+  setupVite(app);
 } else {
-  log("Setting up static file serving...");
   serveStatic(app);
 }
 
-// Start the server if not running in Vercel
-if (process.env.VERCEL !== "1") {
-  const port = parseInt(process.env.PORT || '3000', 10);
-  app.listen(port, () => {
-    log(`Server is running on port ${port}`);
-  });
-}
+// Start server (use port 3000 for local, process.env.PORT for Vercel/Replit)
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
 
-// Export the Express app for Vercel
 export default app;

@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import express, { type Request, Response, NextFunction } from "express";
+import express from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { createServer } from "http";
@@ -47,7 +47,7 @@ if (!process.env.BREVO_API_KEY) {
 registerRoutes(app);
 
 // Error handling middleware
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error("Server error:", err);
   const status = err.status || err.statusCode || 500;
   const message = err.message || "Internal Server Error";
@@ -70,9 +70,9 @@ if (process.env.NODE_ENV === "development") {
 
 // Start the server if not running in Vercel
 if (process.env.VERCEL !== "1") {
-  const port = process.env.PORT || 3000;
+  const port = parseInt(process.env.PORT || '3000', 10);
   app.listen(port, () => {
-    log(`Server is running on port ${port}`);
+    console.log(`Server is running on http://localhost:${port}`);
   });
 }
 

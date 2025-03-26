@@ -1,6 +1,8 @@
+import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { createServer } from "http";
 
 // Load environment variables first
 const app = express();
@@ -33,57 +35,46 @@ app.use((req, res, next) => {
   next();
 });
 
-(async () => {
-  try {
-    log("Starting server initialization...");
+// Log environment variables status
+if (!process.env.SLACK_BOT_TOKEN) {
+  log("Warning: SLACK_BOT_TOKEN not configured. Slack notifications will be disabled.");
+}
+if (!process.env.BREVO_API_KEY) {
+  log("Warning: BREVO_API_KEY not configured. Email notifications will be disabled.");
+}
 
-    // Check required environment variables
-    const requiredEnvVars = ['HUBSPOT_ACCESS_TOKEN'];
-    const missingVars = requiredEnvVars.filter(v => !process.env[v]);
+// Register API routes
+registerRoutes(app);
 
-    if (missingVars.length > 0) {
-      throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
-    }
+// Error handling middleware
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  console.error("Server error:", err);
+  const status = err.status || err.statusCode || 500;
+  const message = err.message || "Internal Server Error";
+  res.status(status).json({ 
+    success: false,
+    message: message
+  });
+});
 
-    // Log optional environment variables status
-    if (!process.env.SLACK_BOT_TOKEN) {
-      log("Warning: SLACK_BOT_TOKEN not configured. Slack notifications will be disabled.");
-    }
+// Setup Vite in development or serve static files in production
+if (process.env.NODE_ENV === "development") {
+  log("Setting up Vite middleware...");
+  const server = createServer(app);
+  setupVite(app, server);
+  log("Vite middleware setup complete");
+} else {
+  log("Setting up static file serving...");
+  serveStatic(app);
+}
 
-    const server = await registerRoutes(app);
+// Start the server if not running in Vercel
+if (process.env.VERCEL !== "1") {
+  const port = process.env.PORT || 3000;
+  app.listen(port, () => {
+    log(`Server is running on port ${port}`);
+  });
+}
 
-    // Error handling middleware
-    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-      console.error("Server error:", err);
-      const status = err.status || err.statusCode || 500;
-      const message = err.message || "Internal Server Error";
-      res.status(status).json({ 
-        success: false,
-        message: message
-      });
-    });
-
-    // Setup Vite in development
-    if (app.get("env") === "development") {
-      log("Setting up Vite middleware...");
-      await setupVite(app, server);
-      log("Vite middleware setup complete");
-    } else {
-      log("Setting up static file serving...");
-      serveStatic(app);
-    }
-
-    // Start the server
-    const port = 5000;
-    server.listen({
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    }, () => {
-      log(`Server is running on port ${port}`);
-    });
-  } catch (error) {
-    console.error("Failed to start server:", error);
-    process.exit(1);
-  }
-})();
+// Export the Express app for Vercel
+export default app;

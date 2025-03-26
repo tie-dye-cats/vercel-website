@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "server/index.ts",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "client/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "server/index.ts"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "client/$1"
+    }
+  ],
+  "env": {
+    "BREVO_API_KEY": "@brevo_api_key",
+    "SLACK_BOT_TOKEN": "@slack_bot_token",
+    "SLACK_CHANNEL_ID": "@slack_channel_id",
+    "CONTACT_EMAIL": "@contact_email"
+  }
+} 

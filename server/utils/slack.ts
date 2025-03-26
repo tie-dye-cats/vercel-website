@@ -1,5 +1,9 @@
 import { WebClient } from "@slack/web-api";
 
+console.log("Initializing Slack client...");
+console.log("SLACK_BOT_TOKEN exists:", !!process.env.SLACK_BOT_TOKEN);
+console.log("SLACK_CHANNEL_ID:", process.env.SLACK_CHANNEL_ID);
+
 const slackClient = process.env.SLACK_BOT_TOKEN 
   ? new WebClient(process.env.SLACK_BOT_TOKEN)
   : null;
@@ -18,7 +22,8 @@ export async function sendLeadNotification(data: {
   }
 
   try {
-    await slackClient.chat.postMessage({
+    console.log("Attempting to send Slack message to channel:", process.env.SLACK_CHANNEL_ID);
+    const result = await slackClient.chat.postMessage({
       channel: process.env.SLACK_CHANNEL_ID || "general",
       text: `New Lead Submission:
 • Name: ${data.firstName || 'Not provided'}
@@ -28,8 +33,14 @@ export async function sendLeadNotification(data: {
 • Marketing Consent: ${data.marketingConsent ? 'Yes' : 'No'}
 • Communication Consent: ${data.communicationConsent ? 'Yes' : 'No'}`
     });
+    console.log("Slack message sent successfully:", result);
   } catch (error) {
     console.error("Slack notification failed - continuing without sending notification");
-    console.debug("Slack error details:", error);
+    console.error("Slack error details:", {
+      message: error.message,
+      code: error.code,
+      data: error.data,
+      stack: error.stack
+    });
   }
 }

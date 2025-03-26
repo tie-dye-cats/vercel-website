@@ -5,6 +5,8 @@ import { setupVite, serveStatic, log } from "./vite";
 import { createServer } from "http";
 
 const app = express();
+// Create HTTP server
+const server = createServer(app);
 
 // Basic middleware
 app.use(express.json());
@@ -34,20 +36,17 @@ Object.entries(requiredEnvVars).forEach(([key, feature]) => {
   }
 });
 
-// Register API routes
+// Register API routes BEFORE static/Vite middleware
 registerRoutes(app);
 
-// Error handling
-app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error("Server error:", err);
+// Error handling for API routes
+app.use("/api", (err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error("API error:", err);
   res.status(err.status || 500).json({ 
     success: false,
     message: err.message || "Internal Server Error"
   });
 });
-
-// Create HTTP server
-const server = createServer(app);
 
 // Setup static files or Vite middleware
 if (process.env.NODE_ENV === "development") {

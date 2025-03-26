@@ -3,7 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
-import Home from "@/pages/Home";
+import Home from "@/pages/index";
 import Blog from "@/pages/Blog";
 import FreeTools from "@/pages/FreeTools";
 import AdHooks from "@/pages/AdHooks";

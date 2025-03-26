@@ -23,12 +23,6 @@
       "destination": "/index.html"
     }
   ],
-  "env": {
-    "SLACK_BOT_TOKEN": "@slack_bot_token",
-    "SLACK_CHANNEL_ID": "@slack_channel_id",
-    "BREVO_API_KEY": "@brevo_api_key",
-    "CONTACT_EMAIL": "@contact_email"
-  },
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
   "installCommand": "npm install",

@@ -6,8 +6,11 @@
       "use": "@vercel/node"
     },
     {
-      "src": "client/**",
-      "use": "@vercel/static"
+      "src": "client/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
     }
   ],
   "routes": [
@@ -17,13 +20,28 @@
     },
     {
       "src": "/(.*)",
-      "dest": "client/$1"
+      "dest": "/index.html"
     }
   ],
   "env": {
-    "BREVO_API_KEY": "@brevo_api_key",
     "SLACK_BOT_TOKEN": "@slack_bot_token",
     "SLACK_CHANNEL_ID": "@slack_channel_id",
+    "BREVO_API_KEY": "@brevo_api_key",
     "CONTACT_EMAIL": "@contact_email"
-  }
+  },
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": null,
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 } 

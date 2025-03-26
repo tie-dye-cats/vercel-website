@@ -37,6 +37,12 @@ Object.entries(requiredEnvVars).forEach(([key, feature]) => {
 });
 
 // Register API routes BEFORE static/Vite middleware
+app.use('/api', (req, res, next) => {
+  // Ensure all API responses are JSON
+  res.setHeader('Content-Type', 'application/json');
+  next();
+});
+
 registerRoutes(app);
 
 // Error handling for API routes
@@ -45,6 +51,14 @@ app.use("/api", (err: any, _req: express.Request, res: express.Response, _next: 
   res.status(err.status || 500).json({ 
     success: false,
     message: err.message || "Internal Server Error"
+  });
+});
+
+// Handle 404s for API routes
+app.use('/api/*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `API endpoint not found: ${req.path}`
   });
 });
 
@@ -59,7 +73,7 @@ if (process.env.NODE_ENV === "development") {
 
 // Start server (use port 3000 for local, process.env.PORT for Vercel/Replit)
 const port = parseInt(process.env.PORT || '3000', 10);
-server.listen(port, 'localhost', () => {
+server.listen(port, () => {
   log(`Server running at http://localhost:${port}`);
 });
 

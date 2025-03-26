@@ -15,7 +15,7 @@ export function registerRoutes(app: Express) {
         communicationConsent: true
       });
       
-      return res.status(200).json({ 
+      return res.json({ 
         success: true,
         message: "Test Slack notification sent successfully"
       });
@@ -42,7 +42,7 @@ export function registerRoutes(app: Express) {
         to: [{ email: process.env.CONTACT_EMAIL || 'contact@physiqfitness.com' }]
       });
       
-      return res.status(200).json({ 
+      return res.json({ 
         success: true,
         message: "Test email sent successfully",
         data: response
@@ -61,6 +61,13 @@ export function registerRoutes(app: Express) {
   app.post("/api/form", async (req, res) => {
     try {
       const { name, email, message } = req.body;
+
+      if (!name || !email || !message) {
+        return res.status(400).json({
+          success: false,
+          message: "Missing required fields: name, email, and message are required"
+        });
+      }
       
       // Send notification to Slack
       await sendLeadNotification({
@@ -83,7 +90,7 @@ export function registerRoutes(app: Express) {
         to: [{ email, name }]
       });
       
-      return res.status(200).json({ 
+      return res.json({ 
         success: true,
         message: "Form submission successful"
       });

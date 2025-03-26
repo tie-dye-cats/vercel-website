@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { sendLeadNotification } from "./utils/slack";
-import { sendEmail } from "./utils/brevo";
+import { sendEmail, createContact } from "./utils/brevo";
 
 export function registerRoutes(app: Express) {
   // Test endpoint for Slack notifications
@@ -32,6 +32,17 @@ export function registerRoutes(app: Express) {
   // Test endpoint for Brevo email
   app.post("/api/test-brevo", async (req, res) => {
     try {
+      // First create a test contact
+      await createContact({
+        email: process.env.CONTACT_EMAIL || 'contact@physiqfitness.com',
+        firstName: 'Test',
+        attributes: {
+          COMPANY: 'Test Company',
+          SOURCE: 'Website Test'
+        }
+      });
+
+      // Then send a test email
       const response = await sendEmail({
         subject: 'Test Email from Brevo Integration',
         htmlContent: `
@@ -44,14 +55,14 @@ export function registerRoutes(app: Express) {
       
       return res.json({ 
         success: true,
-        message: "Test email sent successfully",
+        message: "Test contact created and email sent successfully",
         data: response
       });
     } catch (error: any) {
       console.error("Brevo test error:", error);
       return res.status(500).json({ 
         success: false, 
-        message: "Error sending test email",
+        message: "Error testing Brevo integration",
         error: error.message 
       });
     }
@@ -69,6 +80,17 @@ export function registerRoutes(app: Express) {
         });
       }
       
+      // Create or update contact in Brevo
+      await createContact({
+        email,
+        firstName: name,
+        attributes: {
+          LAST_MESSAGE: message,
+          SOURCE: 'Website Form',
+          SIGNUP_DATE: new Date().toISOString()
+        }
+      });
+
       // Send notification to Slack
       await sendLeadNotification({
         firstName: name,

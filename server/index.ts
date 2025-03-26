@@ -14,13 +14,11 @@ app.use(express.urlencoded({ extended: false }));
 
 // API request logging
 app.use((req, res, next) => {
-  if (req.path.startsWith("/api")) {
-    const start = Date.now();
-    res.on("finish", () => {
-      const duration = Date.now() - start;
-      log(`${req.method} ${req.path} ${res.statusCode} in ${duration}ms`);
-    });
-  }
+  const start = Date.now();
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    log(`${req.method} ${req.path} ${res.statusCode} in ${duration}ms`);
+  });
   next();
 });
 
@@ -43,6 +41,7 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
+// Register routes
 registerRoutes(app);
 
 // Error handling for API routes

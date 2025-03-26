@@ -68,7 +68,66 @@ export function registerRoutes(app: Express) {
     }
   });
 
-  // Form submission endpoint
+  // Lead form submission endpoint
+  app.post("/api/leads", async (req, res) => {
+    try {
+      const { firstName, lastName, email, phone, company } = req.body;
+
+      if (!firstName || !email || !phone) {
+        return res.status(400).json({
+          success: false,
+          message: "Missing required fields: firstName, email, and phone are required"
+        });
+      }
+      
+      // Create or update contact in Brevo
+      await createContact({
+        email,
+        firstName,
+        attributes: {
+          LASTNAME: lastName || '',
+          COMPANY: company || '',
+          PHONE: phone,
+          SOURCE: 'Website Lead Form',
+          SIGNUP_DATE: new Date().toISOString()
+        }
+      });
+
+      // Send notification to Slack
+      await sendLeadNotification({
+        firstName,
+        email,
+        phone,
+        question: `Company: ${company || 'Not provided'}`
+      });
+
+      // Send confirmation email
+      await sendEmail({
+        subject: 'Thank you for your interest in Physiq Fitness',
+        htmlContent: `
+          <h2>Thank you for reaching out!</h2>
+          <p>Hi ${firstName},</p>
+          <p>We have received your information and one of our experts will be in touch with you shortly.</p>
+          <p>Best regards,<br>The Physiq Fitness Team</p>
+        `,
+        to: [{ email, name: firstName }]
+      });
+      
+      return res.json({ 
+        success: true,
+        message: "Lead form submission successful"
+      });
+    } catch (error: any) {
+      console.error("Lead form submission error:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Error submitting lead form",
+        error: error.message 
+      });
+    }
+  });
+
+  // Contact form submission endpoint
   app.post("/api/form", async (req, res) => {
     try {
       const { name, email, message } = req.body;

@@ -118,20 +118,20 @@ Communication Consent: ${values.communicationConsent ? 'Yes' : 'No'}
   const fields = [
     {
       name: "firstName",
-      label: "Hey, can't wait to chat! Before we send our reply, can we get your first name?",
+      label: "Name",
       type: "text",
       placeholder: "First Name"
     },
     {
       name: "email",
-      label: "Drop your email below to get our unfiltered reply.",
+      label: "Email",
       type: "email",
       placeholder: "Email",
       disclaimer: "We'll clear the smoke on those trash metrics in no time—then we'll be toastin' to your big win."
     },
     {
       name: "phone",
-      label: "Your phone number is not required but if you prefer getting down to business over text or by phone, then we're going to need those digits.",
+      label: "Phone",
       type: "tel",
       placeholder: "Phone Number",
       disclaimer: "(We won't blow up your phone with dumb offers or try to get you on more calls. Just don't ghost us ;)"

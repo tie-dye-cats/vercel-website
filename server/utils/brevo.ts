@@ -1,93 +1,138 @@
 import * as SibApiV3Sdk from '@sendinblue/client';
 
-// Initialize Brevo API client
-const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+// Initialize Brevo API key
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
+
+// Initialize API instances with API key
+const transactionalEmailsApi = new SibApiV3Sdk.TransactionalEmailsApi();
 const contactsApi = new SibApiV3Sdk.ContactsApi();
 
-// Set API key
-apiInstance.setApiKey(SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY || '');
-contactsApi.setApiKey(SibApiV3Sdk.ContactsApiApiKeys.apiKey, process.env.BREVO_API_KEY || '');
+// Set API key for both instances
+if (BREVO_API_KEY) {
+  transactionalEmailsApi.setApiKey(SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey, BREVO_API_KEY);
+  contactsApi.setApiKey(SibApiV3Sdk.ContactsApiApiKeys.apiKey, BREVO_API_KEY);
+} else {
+  console.warn('Warning: BREVO_API_KEY not configured. Email and contact features will be disabled.');
+}
 
-// List IDs for different contact types
-const CONTACT_LISTS = {
-  WEBSITE_LEADS: 2  // Replace with your actual list ID from Brevo
+// Define list IDs (replace with your actual list IDs)
+export const CONTACT_LISTS = {
+  WEBSITE_LEADS: 2, // Replace with your actual list ID
+  NEWSLETTER: 3,    // Replace with your actual list ID
 };
 
-interface EmailParams {
+export async function createContact({
+  email,
+  firstName,
+  attributes = {}
+}: {
+  email: string;
+  firstName: string;
+  attributes?: Record<string, any>;
+}) {
+  if (!BREVO_API_KEY) {
+    console.warn('Warning: BREVO_API_KEY not configured. Contact creation disabled.');
+    return;
+  }
+
+  try {
+    // Clean input data
+    const cleanEmail = String(email).trim().toLowerCase();
+    const cleanFirstName = String(firstName).trim();
+
+    // Create contact object
+    const createContact = new SibApiV3Sdk.CreateContact();
+    createContact.email = cleanEmail;
+    createContact.attributes = {
+      FIRSTNAME: cleanFirstName,
+      ...attributes,
+      SIGNUP_DATE: new Date().toISOString()
+    };
+    createContact.listIds = [CONTACT_LISTS.WEBSITE_LEADS];
+
+    console.log('Creating contact with data:', {
+      email: cleanEmail,
+      attributes: createContact.attributes,
+      listIds: createContact.listIds
+    });
+
+    // Attempt to create contact
+    try {
+      const data = await contactsApi.createContact(createContact);
+      console.log('Contact created successfully:', data);
+      return data;
+    } catch (error: any) {
+      // If contact already exists (duplicate), try updating instead
+      if (error.response?.body?.code === 'duplicate_parameter') {
+        console.log('Contact already exists, updating...');
+        const updateContact = new SibApiV3Sdk.UpdateContact();
+        updateContact.attributes = createContact.attributes;
+        updateContact.listIds = createContact.listIds;
+        
+        const data = await contactsApi.updateContact(cleanEmail, updateContact);
+        console.log('Contact updated successfully:', data);
+        return data;
+      }
+      throw error; // Re-throw if it's not a duplicate error
+    }
+  } catch (error: any) {
+    console.error('Error in createContact:', {
+      message: error.message,
+      response: error.response?.body,
+      stack: error.stack
+    });
+    throw new Error(`Failed to create/update contact: ${error.message}`);
+  }
+}
+
+export async function sendEmail({
+  subject,
+  htmlContent,
+  to,
+}: {
   subject: string;
   htmlContent: string;
   to: Array<{ email: string; name?: string }>;
-}
-
-export async function createContact(params: { 
-  email: string; 
-  firstName?: string;
-  phone?: string;
-  attributes?: Record<string, any>;
 }) {
-  if (!process.env.BREVO_API_KEY) {
-    console.log("Brevo contact creation disabled - no BREVO_API_KEY configured");
+  if (!BREVO_API_KEY) {
+    console.warn('Warning: BREVO_API_KEY not configured. Email sending disabled.');
     return;
   }
 
   try {
-    // Create contact
-    const createContact = new SibApiV3Sdk.CreateContact();
-    createContact.email = params.email;
-    createContact.attributes = {
-      FIRSTNAME: params.firstName || '',
-      SMS: params.phone || '',
-      ...params.attributes
-    };
-    createContact.listIds = [CONTACT_LISTS.WEBSITE_LEADS];
-    createContact.updateEnabled = true; // Update contact if it already exists
+    // Clean input data
+    const cleanTo = to.map(recipient => ({
+      email: String(recipient.email).trim().toLowerCase(),
+      name: recipient.name ? String(recipient.name).trim() : undefined
+    }));
 
-    const response = await contactsApi.createContact(createContact);
-    console.log('Contact created/updated in Brevo:', response);
-    return response;
-  } catch (error: any) {
-    // If contact already exists, try to update their list membership
-    if (error.response?.body?.code === 'duplicate_parameter') {
-      try {
-        console.log('Contact already exists, updating list membership:', params.email);
-        await contactsApi.addContactToList(CONTACT_LISTS.WEBSITE_LEADS, { emails: [params.email] });
-        return null;
-      } catch (listError) {
-        console.error('Error adding contact to list:', listError);
-        throw listError;
-      }
-    }
-    throw error;
-  }
-}
-
-export async function sendEmail(params: EmailParams) {
-  if (!process.env.BREVO_API_KEY) {
-    console.log("Brevo notifications disabled - no BREVO_API_KEY configured");
-    return;
-  }
-
-  try {
+    // Create email object
     const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
-    sendSmtpEmail.subject = params.subject;
-    sendSmtpEmail.htmlContent = params.htmlContent;
-    sendSmtpEmail.sender = { 
-      name: 'Physiq Fitness Website', 
-      email: 'noreply@physiqfitness.com' 
+    sendSmtpEmail.subject = subject;
+    sendSmtpEmail.htmlContent = htmlContent;
+    sendSmtpEmail.sender = {
+      name: 'Physiq Fitness Website',
+      email: 'noreply@physiqfitness.com'
     };
-    sendSmtpEmail.to = params.to;
+    sendSmtpEmail.to = cleanTo;
 
     console.log('Sending email with params:', {
-      subject: params.subject,
-      to: params.to,
-      from: sendSmtpEmail.sender
+      subject,
+      to: cleanTo,
+      from: sendSmtpEmail.sender,
+      apiKeyPresent: !!BREVO_API_KEY
     });
 
-    const response = await apiInstance.sendTransacEmail(sendSmtpEmail);
-    console.log('Email sent successfully:', response);
-    return response;
-  } catch (error) {
-    console.error('Error sending email:', error);
-    throw error;
+    // Send email
+    const data = await transactionalEmailsApi.sendTransacEmail(sendSmtpEmail);
+    console.log('Email sent successfully:', data);
+    return data;
+  } catch (error: any) {
+    console.error('Error in sendEmail:', {
+      message: error.message,
+      response: error.response?.body,
+      stack: error.stack
+    });
+    throw new Error(`Failed to send email: ${error.message}`);
   }
 } 

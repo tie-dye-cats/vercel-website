@@ -49,12 +49,24 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
         const values = form.getValues();
         console.log("Starting form submission with data:", values);
 
-        const response = await fetch('/api/leads', {
+        // Format the data to match the /api/form endpoint expectations
+        const formattedData = {
+          name: values.firstName,
+          email: values.email,
+          message: `
+Phone: ${values.phone}
+Question: ${values.question}
+Marketing Consent: ${values.marketingConsent ? 'Yes' : 'No'}
+Communication Consent: ${values.communicationConsent ? 'Yes' : 'No'}
+          `.trim()
+        };
+
+        const response = await fetch('/api/form', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(values)
+          body: JSON.stringify(formattedData)
         });
 
         console.log("Form submission response status:", response.status);
@@ -202,7 +214,7 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
                     htmlFor="marketingConsent"
                     className="text-sm text-gray-600"
                   >
-                    I agree to receive marketing communications from AdVelocity about products, services, and industry insights.
+                    I agree to receive marketing communications about products, services, and industry insights.
                   </label>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -214,7 +226,7 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
                     htmlFor="communicationConsent"
                     className="text-sm text-gray-600"
                   >
-                    I understand and agree that AdVelocity will use my information in accordance with their privacy policy to provide the requested services.
+                    I understand and agree that my information will be used in accordance with the privacy policy to provide the requested services.
                   </label>
                 </div>
               </div>
@@ -224,21 +236,23 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
                 {form.formState.errors[currentField.name as keyof typeof form.formState.errors]?.message}
               </p>
             )}
-            <div className="space-y-2 mt-4">
-              <Button
-                onClick={handleNext}
-                className="w-full bg-[#1877F2] hover:bg-[#166FE5] text-white"
-              >
-                {step === fields.length - 1 ? "Send Message to a Real Person (Not a Bot)" : "Continue"}
-              </Button>
+            <div className="mt-6 flex justify-between gap-3">
               {step > 0 && (
-                <button
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={handleBack}
-                  className="w-full text-gray-500 hover:text-gray-700 text-sm py-2 transition-colors"
                 >
-                  Go back
-                </button>
+                  Back
+                </Button>
               )}
+              <Button
+                type="button"
+                className={`${step === 0 ? 'w-full' : 'flex-1'} bg-[#1877F2] hover:bg-[#1864F2] text-white`}
+                onClick={handleNext}
+              >
+                {currentField.isConsentStep ? 'Send Message' : 'Next'}
+              </Button>
             </div>
           </motion.div>
         </AnimatePresence>

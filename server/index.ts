@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { createServer } from "http";
 
 const app = express();
 
@@ -45,17 +46,22 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
   });
 });
 
+// Create HTTP server
+const server = createServer(app);
+
 // Setup static files or Vite middleware
 if (process.env.NODE_ENV === "development") {
-  setupVite(app);
+  log("Setting up Vite development server...");
+  setupVite(app, server);
 } else {
+  log("Setting up static file serving...");
   serveStatic(app);
 }
 
 // Start server (use port 3000 for local, process.env.PORT for Vercel/Replit)
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+const port = parseInt(process.env.PORT || '3000', 10);
+server.listen(port, 'localhost', () => {
+  log(`Server running at http://localhost:${port}`);
 });
 
 export default app;

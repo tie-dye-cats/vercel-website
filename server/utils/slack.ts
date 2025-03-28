@@ -34,13 +34,13 @@ export async function sendLeadNotification(data: {
 • Communication Consent: ${data.communicationConsent ? 'Yes' : 'No'}`
     });
     console.log("Slack message sent successfully:", result);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Slack notification failed - continuing without sending notification");
     console.error("Slack error details:", {
-      message: error.message,
-      code: error.code,
-      data: error.data,
-      stack: error.stack
+      message: error?.message || 'Unknown error',
+      code: error?.code || 'Unknown code',
+      data: error?.data || {},
+      stack: error?.stack || 'No stack trace'
     });
   }
 }

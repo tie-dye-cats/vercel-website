@@ -4,7 +4,11 @@
     "module": "ESNext",
     "moduleResolution": "Node",
     "outDir": "dist",
-    "noEmit": false,
+    "allowJs": true,
+    "esModuleInterop": true,
+    "target": "ESNext",
+    "isolatedModules": true,
+    "resolveJsonModule": true,
     "jsx": "preserve"
   },
   "include": ["server/**/*"],

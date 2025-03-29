@@ -1,7 +1,9 @@
-import { ApiClient, BrevoError } from '@getbrevo/brevo';
-import type { CreateContactParams as BrevoContactParams, SendEmailParams as BrevoEmailParams } from '../types/brevo';
+import type { ApiClientConstructor, BrevoError, CreateContactParams, SendEmailParams } from '../types/brevo';
 
-const brevoClient = new ApiClient({
+// Import the actual API client constructor
+const { ApiClient } = require('@getbrevo/brevo');
+
+const brevoClient = (ApiClient as ApiClientConstructor)({
   apiKey: process.env.BREVO_API_KEY || '',
 });
 
@@ -11,16 +13,7 @@ export const CONTACT_LISTS = {
   WEBSITE_LEADS: 2
 };
 
-export interface CreateContactParams {
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
-  listId?: number;
-  attributes?: Record<string, string>;
-}
-
-export async function sendEmail(params: BrevoEmailParams) {
+export async function sendEmail(params: SendEmailParams) {
   if (!process.env.BREVO_API_KEY) {
     throw new Error('BREVO_API_KEY environment variable is not set');
   }
@@ -38,7 +31,7 @@ export async function sendEmail(params: BrevoEmailParams) {
   }
 }
 
-export async function createContact(params: BrevoContactParams) {
+export async function createContact(params: CreateContactParams) {
   if (!process.env.BREVO_API_KEY) {
     throw new Error('BREVO_API_KEY environment variable is not set');
   }

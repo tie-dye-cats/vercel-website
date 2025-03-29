@@ -1,6 +1,6 @@
 import express from 'express';
+import type { ApiClientConstructor, CreateContactParams, SendEmailParams } from '../types/brevo';
 import { ApiClient } from '@getbrevo/brevo';
-import { CreateContactParams, SendEmailParams } from '../types/brevo';
 
 const router = express.Router();
 
@@ -23,6 +23,10 @@ export async function createContact(params: CreateContactParams) {
       // Get existing contact
       const getResponse = await brevoClient.contactsApi.getContactInfo(params.email);
       
+      if (!getResponse.id) {
+        throw new Error('Failed to get contact ID');
+      }
+
       // Update contact
       const updateResponse = await brevoClient.contactsApi.updateContact(getResponse.id, {
         ...params,

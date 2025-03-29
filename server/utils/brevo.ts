@@ -1,9 +1,8 @@
 import type { ApiClientConstructor, BrevoError, CreateContactParams, SendEmailParams } from '../types/brevo';
+import { ApiClient } from '@getbrevo/brevo';
 
-// Import the actual API client constructor
-const { ApiClient } = require('@getbrevo/brevo');
-
-const brevoClient = (ApiClient as ApiClientConstructor)({
+// Initialize Brevo client
+const brevoClient = new ApiClient({
   apiKey: process.env.BREVO_API_KEY || '',
 });
 

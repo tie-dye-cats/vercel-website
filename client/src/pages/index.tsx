@@ -33,11 +33,16 @@ export default function Home() {
               muted 
               playsInline
               preload="auto"
-              onError={(e) => console.error('Video error:', e)}
+              onError={(e) => {
+                console.error('Video error:', e);
+                const videoElement = e.target as HTMLVideoElement;
+                console.log('Video source:', videoElement.currentSrc);
+                console.log('Video ready state:', videoElement.readyState);
+              }}
               className="w-full h-full object-cover scale-105"
             >
               <source 
-                src="/AdVelocity_Home_Page_Video.mp4" 
+                src="AdVelocity_Home_Page_Video.mp4" 
                 type="video/mp4"
               />
               Your browser does not support the video tag.

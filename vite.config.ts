@@ -32,7 +32,24 @@ export default defineConfig({
   build: {
     outDir: path.resolve(__dirname, "dist", "public"),
     emptyOutDir: true,
-    sourcemap: true
+    sourcemap: true,
+    assetsDir: "assets",
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, "client", "index.html"),
+      },
+      output: {
+        assetFileNames: (assetInfo) => {
+          if (!assetInfo.name) return 'assets/[name].[hash][extname]';
+          const info = assetInfo.name.split('.');
+          const ext = info[info.length - 1];
+          if (/\.(mp4|webm|ogg)$/.test(assetInfo.name)) {
+            return `assets/videos/[name].[hash][extname]`;
+          }
+          return `assets/[name].[hash][extname]`;
+        },
+      },
+    },
   },
   server: {
     port: 3000,
@@ -43,4 +60,5 @@ export default defineConfig({
       },
     },
   },
+  publicDir: path.resolve(__dirname, "client", "public"),
 });

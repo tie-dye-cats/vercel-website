@@ -53,6 +53,8 @@ export interface Configuration {
 
 export interface CreateContactParams {
   email: string;
+  firstName?: string;
+  lastName?: string;
   attributes?: Record<string, any>;
   listIds?: number[];
 }

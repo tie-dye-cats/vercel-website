@@ -139,37 +139,52 @@ export function registerRoutes(app: Express) {
         });
       }
       
-      // Create or update contact in Brevo
-      await createContact({
-        email,
-        firstName: name,
-        attributes: {
-          LAST_MESSAGE: message,
-          SOURCE: 'Website Form',
-          SIGNUP_DATE: new Date().toISOString()
-        }
-      });
+      try {
+        // Create or update contact in Brevo
+        await createContact({
+          email,
+          firstName: name,
+          attributes: {
+            LAST_MESSAGE: message,
+            SOURCE: 'Website Form',
+            SIGNUP_DATE: new Date().toISOString()
+          }
+        });
+      } catch (error) {
+        console.error("Error creating/updating contact:", error);
+        // Continue with the form submission even if Brevo fails
+      }
 
-      // Send notification to Slack
-      await sendLeadNotification({
-        firstName: name,
-        email,
-        question: message
-      });
+      try {
+        // Send notification to Slack
+        await sendLeadNotification({
+          firstName: name,
+          email,
+          question: message
+        });
+      } catch (error) {
+        console.error("Error sending Slack notification:", error);
+        // Continue with the form submission even if Slack fails
+      }
 
-      // Send confirmation email
-      await sendEmail({
-        subject: 'Thank you for contacting Physiq Fitness',
-        htmlContent: `
-          <h2>Thank you for reaching out!</h2>
-          <p>Hi ${name},</p>
-          <p>We have received your message and will get back to you shortly.</p>
-          <p>Your message:</p>
-          <blockquote>${message}</blockquote>
-          <p>Best regards,<br>The Physiq Fitness Team</p>
-        `,
-        to: [{ email, name }]
-      });
+      try {
+        // Send confirmation email
+        await sendEmail({
+          subject: 'Thank you for contacting AdVelocity',
+          htmlContent: `
+            <h2>Thank you for reaching out!</h2>
+            <p>Hi ${name},</p>
+            <p>We have received your message and will get back to you shortly.</p>
+            <p>Your message:</p>
+            <blockquote>${message}</blockquote>
+            <p>Best regards,<br>The AdVelocity Team</p>
+          `,
+          to: [{ email, name }]
+        });
+      } catch (error) {
+        console.error("Error sending confirmation email:", error);
+        // Continue with the form submission even if email fails
+      }
       
       return res.json({ 
         success: true,
@@ -179,8 +194,7 @@ export function registerRoutes(app: Express) {
       console.error("Form submission error:", error);
       return res.status(500).json({ 
         success: false, 
-        message: "Error submitting form",
-        error: error.message 
+        message: error.message || "Error submitting form"
       });
     }
   });

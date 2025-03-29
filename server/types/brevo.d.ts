@@ -30,4 +30,38 @@ declare module '@getbrevo/brevo' {
     listIds?: number[];
     updateEnabled?: boolean;
   }
+}
+
+declare module '@sendinblue/client' {
+  export interface Contact {
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    attributes?: Record<string, any>;
+  }
+
+  export interface EmailParams {
+    subject: string;
+    htmlContent: string;
+    to: Array<{
+      email: string;
+      name?: string;
+    }>;
+  }
+}
+
+export interface CreateContactParams {
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  attributes?: Record<string, any>;
+}
+
+export interface SendEmailParams {
+  subject: string;
+  htmlContent: string;
+  to: Array<{
+    email: string;
+    name?: string;
+  }>;
 } 

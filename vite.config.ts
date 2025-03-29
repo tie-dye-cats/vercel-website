@@ -44,7 +44,7 @@ export default defineConfig({
           const info = assetInfo.name.split('.');
           const ext = info[info.length - 1];
           if (/\.(mp4|webm|ogg)$/.test(assetInfo.name)) {
-            return `assets/videos/[name].[hash][extname]`;
+            return `assets/[name][extname]`;
           }
           return `assets/[name].[hash][extname]`;
         },

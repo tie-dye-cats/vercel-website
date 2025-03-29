@@ -38,11 +38,13 @@ export default function Home() {
                 const videoElement = e.target as HTMLVideoElement;
                 console.log('Video source:', videoElement.currentSrc);
                 console.log('Video ready state:', videoElement.readyState);
+                console.log('Video error code:', videoElement.error?.code);
+                console.log('Video error message:', videoElement.error?.message);
               }}
               className="w-full h-full object-cover scale-105"
             >
               <source 
-                src="AdVelocity_Home_Page_Video.mp4" 
+                src="/assets/AdVelocity_Home_Page_Video.mp4" 
                 type="video/mp4"
               />
               Your browser does not support the video tag.

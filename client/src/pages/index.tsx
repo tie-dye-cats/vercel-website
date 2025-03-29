@@ -25,26 +25,31 @@ export default function Home() {
       </Helmet>
       <main className="bg-white text-gray-900">
         {/* Hero Section with Video Background */}
-        <section className="relative flex flex-col items-center justify-center min-h-screen text-white overflow-hidden">
+        <section className="relative flex flex-col items-center justify-center min-h-[95vh] text-white overflow-hidden -mt-5">
           <div className="absolute inset-0">
             <video 
               autoPlay 
               loop 
               muted 
               playsInline
-              className="w-full h-full object-cover"
-              poster="https://source.unsplash.com/1600x900/?glitch,technology"
+              preload="auto"
+              onError={(e) => console.error('Video error:', e)}
+              className="w-full h-full object-cover scale-105"
             >
-              <source src="/AdVelocity_Home_Page_Video.mp4" type="video/mp4" />
+              <source 
+                src="/AdVelocity_Home_Page_Video.mp4" 
+                type="video/mp4"
+              />
+              Your browser does not support the video tag.
             </video>
-            <div className="absolute inset-0 bg-black opacity-60"></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70"></div>
           </div>
           <div className="relative z-10 text-center px-4 max-w-5xl mx-auto">
             <motion.h1
               initial={{ opacity: 0, y: -50 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
-              className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight"
+              className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight drop-shadow-lg"
             >
               How Can We Fix Your Broken <AdPlatformSlider /> Ad Accounts So You Can Stop Wasting Money And Grow Your Business Right Now?
             </motion.h1>

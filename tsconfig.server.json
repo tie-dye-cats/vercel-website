@@ -3,13 +3,21 @@
   "compilerOptions": {
     "module": "ESNext",
     "moduleResolution": "Node",
-    "outDir": "dist",
+    "outDir": "./dist/server",
+    "noEmit": false,
     "allowJs": true,
     "esModuleInterop": true,
     "target": "ESNext",
     "isolatedModules": true,
     "resolveJsonModule": true,
-    "jsx": "preserve"
+    "jsx": "preserve",
+    "allowImportingTsExtensions": false,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./client/src/*"],
+      "@shared/*": ["./shared/*"]
+    }
   },
   "include": ["server/**/*"],
   "exclude": ["node_modules", "client", "dist"]

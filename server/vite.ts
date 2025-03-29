@@ -43,6 +43,18 @@ export async function setupVite(app: Express, server: Server) {
     appType: "custom",
   });
 
+  // Serve public directory first in development
+  app.use(express.static(path.resolve(__dirname, "..", "public"), {
+    setHeaders: (res, path) => {
+      if (path.endsWith('.mp4')) {
+        res.setHeader('Content-Type', 'video/mp4');
+        res.setHeader('Accept-Ranges', 'bytes');
+        res.setHeader('Cache-Control', 'public, max-age=31536000');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+      }
+    }
+  }));
+  
   app.use(vite.middlewares);
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
@@ -71,7 +83,8 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(__dirname, "..", "dist");
+  const distPath = path.resolve(__dirname, "..", "dist", "public");
+  const publicPath = path.resolve(__dirname, "..", "public");
 
   if (!fs.existsSync(distPath)) {
     throw new Error(
@@ -79,7 +92,29 @@ export function serveStatic(app: Express) {
     );
   }
 
-  app.use(express.static(distPath));
+  // Serve public directory first to ensure video files are accessible
+  app.use(express.static(publicPath, {
+    setHeaders: (res, path) => {
+      if (path.endsWith('.mp4')) {
+        res.setHeader('Content-Type', 'video/mp4');
+        res.setHeader('Accept-Ranges', 'bytes');
+        res.setHeader('Cache-Control', 'public, max-age=31536000');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+      }
+    }
+  }));
+
+  // Then serve dist/public directory
+  app.use(express.static(distPath, {
+    setHeaders: (res, path) => {
+      if (path.endsWith('.mp4')) {
+        res.setHeader('Content-Type', 'video/mp4');
+        res.setHeader('Accept-Ranges', 'bytes');
+        res.setHeader('Cache-Control', 'public, max-age=31536000');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+      }
+    }
+  }));
 
   app.use("*", (_req, res) => {
     res.sendFile(path.resolve(distPath, "index.html"));

@@ -1,0 +1,39 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "replit",
+    "shadcn",
+    "brevo",
+    "lastname",
+    "firstname",
+    "neondatabase",
+    "cmdk",
+    "embla",
+    "memorystore",
+    "recaptcha",
+    "vaul",
+    "wouter",
+    "vercel",
+    "vite",
+    "cloudrun",
+    "getbrevo",
+    "jridgewell",
+    "HUBSPOT",
+    "xoxb",
+    "Jsylktp",
+    "KFJPQ",
+    "xkeysib",
+    "ROAS",
+    "sendinblue",
+    "Physiq",
+    "Transac",
+    "omnichannel"
+  ],
+  "ignorePaths": [
+    "node_modules/**",
+    "dist/**",
+    "build/**",
+    ".git/**"
+  ]
+} 

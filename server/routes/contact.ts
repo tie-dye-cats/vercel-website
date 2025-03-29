@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import * as SibApiV3Sdk from '@sendinblue/client';
+import { TransactionalEmailsApi, SendSmtpEmail } from '@getbrevo/brevo';
 
 const router = Router();
 
 // Initialize Brevo API client
-const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
-apiInstance.setApiKey(SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY || '');
+const apiInstance = new TransactionalEmailsApi();
+apiInstance.setApiKey('api-key', process.env.BREVO_API_KEY || '');
 
 router.post('/submit', async (req, res) => {
   try {
@@ -17,7 +17,7 @@ router.post('/submit', async (req, res) => {
     }
 
     // Create email parameters
-    const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+    const sendSmtpEmail = new SendSmtpEmail();
     sendSmtpEmail.subject = 'New Contact Form Submission';
     sendSmtpEmail.htmlContent = `
       <h2>New Contact Form Submission</h2>
@@ -47,4 +47,4 @@ router.post('/submit', async (req, res) => {
   }
 });
 
-export default router; 
+export default router;

@@ -3,6 +3,12 @@ import express from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { createServer } from "http";
+import path from "path";
+import { fileURLToPath } from 'url';
+
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 // Create HTTP server
@@ -61,6 +67,18 @@ app.use('/api/*', (req, res) => {
   });
 });
 
+// Serve public directory first
+app.use(express.static(path.resolve(__dirname, "..", "public"), {
+  setHeaders: (res, path) => {
+    if (path.endsWith('.mp4')) {
+      res.setHeader('Content-Type', 'video/mp4');
+      res.setHeader('Accept-Ranges', 'bytes');
+      res.setHeader('Cache-Control', 'public, max-age=31536000');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+    }
+  }
+}));
+
 // Setup static files or Vite middleware
 if (process.env.NODE_ENV === "development") {
   log("Setting up Vite development server...");
@@ -70,10 +88,27 @@ if (process.env.NODE_ENV === "development") {
   serveStatic(app);
 }
 
-// Start server (use port 3000 for local, process.env.PORT for Vercel/Replit)
-const port = parseInt(process.env.PORT || '3000', 10);
-server.listen(port, () => {
-  log(`Server running at http://localhost:${port}`);
-});
+// Start server (use port 3003 for local, process.env.PORT for Vercel/Replit)
+const port = parseInt(process.env.PORT || '3003', 10);
+const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
+
+const startServer = (port: number) => {
+  server.listen(port, host, () => {
+    log(`Server running at http://${host}:${port}`);
+  }).on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      log(`Port ${port} is already in use. Trying port ${port + 1}...`);
+      startServer(port + 1);
+    } else if (err.code === 'ENOTSUP') {
+      log(`Port ${port} is not supported. Trying port ${port + 1}...`);
+      startServer(port + 1);
+    } else {
+      log(`Server error: ${err.message}`);
+      process.exit(1);
+    }
+  });
+};
+
+startServer(port);
 
 export default app;

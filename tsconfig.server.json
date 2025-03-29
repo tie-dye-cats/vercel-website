@@ -1,23 +1,18 @@
 {
+  "extends": "./tsconfig.json",
   "compilerOptions": {
     "module": "ESNext",
     "moduleResolution": "Node",
+    "target": "ESNext",
+    "lib": ["ESNext"],
     "outDir": "dist",
-    "target": "ES2020",
-    "lib": ["ES2020"],
-    "isolatedModules": true,
-    "noEmit": false,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "allowJs": true,
-    "resolveJsonModule": true,
-    "strict": true,
-    "typeRoots": ["./node_modules/@types", "./server/types"],
+    "rootDir": ".",
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./client/src/*"],
-      "@shared/*": ["./shared/*"]
-    }
+      "@/*": ["client/src/*"]
+    },
+    "typeRoots": ["./node_modules/@types", "./server/types"]
   },
-  "include": ["server/**/*", "shared/**/*"],
-  "exclude": ["node_modules", "client/src/vite-env.d.ts"]
+  "include": ["server/**/*", "client/src/**/*"],
+  "exclude": ["node_modules", "dist"]
 } 

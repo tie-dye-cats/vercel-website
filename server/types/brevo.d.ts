@@ -1,6 +1,4 @@
 // Type definitions for Brevo API
-import type { ApiClient } from '@getbrevo/brevo';
-
 export interface Contact {
   id?: number;
   email: string;
@@ -41,9 +39,9 @@ export interface TransactionalEmailsApi {
   sendTransacEmail(params: EmailParams): Promise<any>;
 }
 
-export interface ApiClientConstructor {
-  new (config: { apiKey: string }): ApiClient;
-  (config: { apiKey: string }): ApiClient;
+export interface ApiClient {
+  contactsApi: ContactsApi;
+  transactionalEmailsApi: TransactionalEmailsApi;
 }
 
 export interface Configuration {

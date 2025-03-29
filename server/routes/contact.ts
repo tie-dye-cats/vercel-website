@@ -1,13 +1,13 @@
 import express from 'express';
-import type { ApiClientConstructor, CreateContactParams, SendEmailParams } from '../types/brevo';
-import { ApiClient } from '@getbrevo/brevo';
+import type { ApiClient, CreateContactParams, SendEmailParams } from '../types/brevo';
+import Brevo from '@getbrevo/brevo';
 
 const router = express.Router();
 
 // Initialize Brevo client
-const brevoClient = new ApiClient({
+const brevoClient = new Brevo({
   apiKey: process.env.BREVO_API_KEY || '',
-});
+}) as ApiClient;
 
 // Create or update contact
 export async function createContact(params: CreateContactParams) {

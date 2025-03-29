@@ -1,10 +1,10 @@
-import type { ApiClientConstructor, BrevoError, CreateContactParams, SendEmailParams } from '../types/brevo';
-import { ApiClient } from '@getbrevo/brevo';
+import type { ApiClient, BrevoError, CreateContactParams, SendEmailParams } from '../types/brevo';
+import Brevo from '@getbrevo/brevo';
 
 // Initialize Brevo client
-const brevoClient = new ApiClient({
+const brevoClient = new Brevo({
   apiKey: process.env.BREVO_API_KEY || '',
-});
+}) as ApiClient;
 
 const BREVO_API_URL = 'https://api.brevo.com/v3';
 

@@ -1,37 +1,6 @@
 declare module '@getbrevo/brevo' {
-  export class TransactionalEmailsApi {
-    setApiKey(key: string, value: string): void;
-    sendTransacEmail(email: SendSmtpEmail): Promise<any>;
-  }
-
-  export class ContactsApi {
-    setApiKey(key: string, value: string): void;
-    createContact(contact: CreateContact): Promise<any>;
-  }
-
-  export enum TransactionalEmailsApiApiKeys {
-    apiKey = 'api-key'
-  }
-
-  export enum ContactsApiApiKeys {
-    apiKey = 'api-key'
-  }
-
-  export class SendSmtpEmail {
-    subject?: string;
-    htmlContent?: string;
-    sender?: { name: string; email: string };
-    to?: { email: string; name?: string }[];
-  }
-
-  export class CreateContact {
-    email?: string;
-    attributes?: Record<string, string>;
-    listIds?: number[];
-    updateEnabled?: boolean;
-  }
-
   export interface Contact {
+    id?: number;
     email: string;
     firstName?: string;
     lastName?: string;
@@ -47,11 +16,28 @@ declare module '@getbrevo/brevo' {
     }>;
   }
 
+  export interface BrevoError {
+    response?: {
+      body?: {
+        message?: string;
+      };
+    };
+    message?: string;
+  }
+
+  export interface ContactsApi {
+    createContact(params: CreateContactParams): Promise<Contact>;
+    getContactInfo(email: string): Promise<Contact>;
+    updateContact(id: number, params: Partial<Contact>): Promise<Contact>;
+  }
+
+  export interface TransactionalEmailsApi {
+    sendTransacEmail(params: EmailParams): Promise<any>;
+  }
+
   export interface ApiClient {
-    accountApi: any;
-    contactsApi: any;
-    emailCampaignsApi: any;
-    transactionalEmailsApi: any;
+    contactsApi: ContactsApi;
+    transactionalEmailsApi: TransactionalEmailsApi;
   }
 
   export interface Configuration {

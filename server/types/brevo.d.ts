@@ -30,9 +30,7 @@ declare module '@getbrevo/brevo' {
     listIds?: number[];
     updateEnabled?: boolean;
   }
-}
 
-declare module '@sendinblue/client' {
   export interface Contact {
     email: string;
     firstName?: string;
@@ -48,6 +46,25 @@ declare module '@sendinblue/client' {
       name?: string;
     }>;
   }
+
+  export interface ApiClient {
+    accountApi: any;
+    contactsApi: any;
+    emailCampaignsApi: any;
+    transactionalEmailsApi: any;
+  }
+
+  export interface Configuration {
+    apiKey: string;
+    apiServer?: string;
+  }
+
+  export function ApiClient(config: Configuration): ApiClient;
+}
+
+// Legacy module declaration for backward compatibility
+declare module '@sendinblue/client' {
+  export * from '@getbrevo/brevo';
 }
 
 export interface CreateContactParams {

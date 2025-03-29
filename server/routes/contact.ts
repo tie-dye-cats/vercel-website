@@ -1,50 +1,59 @@
-import { Router } from 'express';
-import { TransactionalEmailsApi, SendSmtpEmail } from '@getbrevo/brevo';
+import express from 'express';
+import { ApiClient } from '@getbrevo/brevo';
+import { CreateContactParams, SendEmailParams } from '../types/brevo';
 
-const router = Router();
+const router = express.Router();
 
-// Initialize Brevo API client
-const apiInstance = new TransactionalEmailsApi();
-apiInstance.setApiKey('api-key', process.env.BREVO_API_KEY || '');
-
-router.post('/submit', async (req, res) => {
-  try {
-    const { name, email, phone, message } = req.body;
-
-    // Validate required fields
-    if (!name || !email || !message) {
-      return res.status(400).json({ error: 'Name, email, and message are required' });
-    }
-
-    // Create email parameters
-    const sendSmtpEmail = new SendSmtpEmail();
-    sendSmtpEmail.subject = 'New Contact Form Submission';
-    sendSmtpEmail.htmlContent = `
-      <h2>New Contact Form Submission</h2>
-      <p><strong>Name:</strong> ${name}</p>
-      <p><strong>Email:</strong> ${email}</p>
-      <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
-      <p><strong>Message:</strong></p>
-      <p>${message}</p>
-    `;
-    sendSmtpEmail.sender = { name: 'Physiq Fitness Website', email: 'noreply@physiqfitness.com' };
-    sendSmtpEmail.to = [{ email: process.env.CONTACT_EMAIL || 'contact@physiqfitness.com' }];
-
-    // Send email using Brevo
-    const response = await apiInstance.sendTransacEmail(sendSmtpEmail);
-
-    res.json({ 
-      success: true, 
-      message: 'Message sent successfully',
-      data: response
-    });
-  } catch (error) {
-    console.error('Error sending contact form:', error);
-    res.status(500).json({ 
-      error: 'Failed to send message',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
+// Initialize Brevo client
+const brevoClient = new ApiClient({
+  apiKey: process.env.BREVO_API_KEY || '',
 });
+
+// Create or update contact
+export async function createContact(params: CreateContactParams) {
+  if (!process.env.BREVO_API_KEY) {
+    throw new Error('BREVO_API_KEY environment variable is not set');
+  }
+
+  try {
+    const response = await brevoClient.contactsApi.createContact(params);
+    return response;
+  } catch (error: any) {
+    if (error.response?.body?.message?.includes('already exists')) {
+      // Get existing contact
+      const getResponse = await brevoClient.contactsApi.getContactInfo(params.email);
+      
+      // Update contact
+      const updateResponse = await brevoClient.contactsApi.updateContact(getResponse.id, {
+        ...params,
+        attributes: {
+          ...getResponse.attributes,
+          ...params.attributes
+        }
+      });
+
+      return updateResponse;
+    }
+    throw error;
+  }
+}
+
+// Send email
+export async function sendEmail(params: SendEmailParams) {
+  if (!process.env.BREVO_API_KEY) {
+    throw new Error('BREVO_API_KEY environment variable is not set');
+  }
+
+  try {
+    const response = await brevoClient.transactionalEmailsApi.sendTransacEmail({
+      sender: { email: 'noreply@advelocity.ai', name: 'AdVelocity' },
+      ...params
+    });
+    return response;
+  } catch (error) {
+    console.error('Error sending email:', error);
+    throw error;
+  }
+}
 
 export default router;

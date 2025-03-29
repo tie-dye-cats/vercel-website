@@ -1,21 +1,26 @@
 {
-  "extends": "./tsconfig.json",
   "compilerOptions": {
     "module": "ESNext",
     "moduleResolution": "Node",
     "target": "ESNext",
     "lib": ["ESNext"],
-    "outDir": "dist",
-    "rootDir": ".",
+    "outDir": "./dist/server",
+    "rootDir": "./server",
     "baseUrl": ".",
     "composite": true,
     "declaration": true,
     "declarationMap": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
     "paths": {
       "@/*": ["client/src/*"]
     },
     "typeRoots": ["./node_modules/@types", "./server/types"]
   },
-  "include": ["server/**/*", "client/src/**/*"],
+  "include": ["server/**/*"],
   "exclude": ["node_modules", "dist"]
 } 

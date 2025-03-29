@@ -17,9 +17,13 @@
     "paths": {
       "@/*": ["client/src/*"]
     },
-    "typeRoots": ["./node_modules/@types", "./server/types"]
+    "typeRoots": ["./node_modules/@types", "./server/types"],
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "./dist/client"
   },
-  "include": ["client/src/**/*", "server/**/*"],
+  "include": ["client/src/**/*"],
   "exclude": ["node_modules", "dist"],
   "references": [
     {

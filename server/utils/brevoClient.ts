@@ -62,11 +62,14 @@ export const sendEmail = async (
     sendSmtpEmail.htmlContent = htmlContent;
     sendSmtpEmail.sender = sender;
 
-    const { body } = await transactionalEmailsApi.sendTransacEmail(sendSmtpEmail);
-    return { messageId: body.messageId || '' };
-  } catch (error) {
+    const response = await transactionalEmailsApi.sendTransacEmail(sendSmtpEmail);
+    if (!response || !response.body) {
+      throw new Error('Invalid response from Brevo API');
+    }
+    return { messageId: response.body.messageId || '' };
+  } catch (error: any) {
     console.error('Error sending email:', error);
-    throw error;
+    throw new Error(error.message || 'Failed to send email');
   }
 };
 
@@ -80,35 +83,40 @@ export const createContact = async (
     createContact.email = cleanEmail(email);
     createContact.attributes = attributes;
 
-    const { body } = await contactsApi.createContact(createContact);
-    return { id: body.id || 0 };
-  } catch (error) {
+    const response = await contactsApi.createContact(createContact);
+    if (!response || !response.body) {
+      throw new Error('Invalid response from Brevo API');
+    }
+    return { id: response.body.id || 0 };
+  } catch (error: any) {
     console.error('Error creating contact:', error);
-    throw error;
+    throw new Error(error.message || 'Failed to create contact');
   }
 };
 
 // Get contact info function
 export const getContactInfo = async (email: string): Promise<ContactInfoResponse | null> => {
   try {
-    const { body } = await contactsApi.getContactInfo(cleanEmail(email));
-    if (!body) return null;
+    const response = await contactsApi.getContactInfo(cleanEmail(email));
+    if (!response || !response.body) {
+      return null;
+    }
     
     return {
-      email: body.email || '',
-      id: body.id || 0,
-      emailBlacklisted: body.emailBlacklisted || false,
-      smsBlacklisted: body.smsBlacklisted || false,
-      createdAt: body.createdAt || '',
-      modifiedAt: body.modifiedAt || '',
-      attributes: body.attributes || {}
+      email: response.body.email || '',
+      id: response.body.id || 0,
+      emailBlacklisted: response.body.emailBlacklisted || false,
+      smsBlacklisted: response.body.smsBlacklisted || false,
+      createdAt: response.body.createdAt || '',
+      modifiedAt: response.body.modifiedAt || '',
+      attributes: response.body.attributes || {}
     };
-  } catch (error) {
-    if ((error as any).statusCode === 404) {
+  } catch (error: any) {
+    if (error.statusCode === 404) {
       return null;
     }
     console.error('Error getting contact info:', error);
-    throw error;
+    throw new Error(error.message || 'Failed to get contact info');
   }
 };
 
@@ -118,10 +126,13 @@ export const updateContact = async (
   attributes: Record<string, any>
 ): Promise<void> => {
   try {
-    await contactsApi.updateContact(cleanEmail(email), { attributes });
-  } catch (error) {
+    const response = await contactsApi.updateContact(cleanEmail(email), { attributes });
+    if (!response || !response.body) {
+      throw new Error('Invalid response from Brevo API');
+    }
+  } catch (error: any) {
     console.error('Error updating contact:', error);
-    throw error;
+    throw new Error(error.message || 'Failed to update contact');
   }
 };
 
@@ -139,11 +150,14 @@ export const sendEmailWithTemplate = async (
     sendSmtpEmail.params = params;
     sendSmtpEmail.sender = sender;
 
-    const { body } = await transactionalEmailsApi.sendTransacEmail(sendSmtpEmail);
-    return { messageId: body.messageId || '' };
-  } catch (error) {
+    const response = await transactionalEmailsApi.sendTransacEmail(sendSmtpEmail);
+    if (!response || !response.body) {
+      throw new Error('Invalid response from Brevo API');
+    }
+    return { messageId: response.body.messageId || '' };
+  } catch (error: any) {
     console.error('Error sending email with template:', error);
-    throw error;
+    throw new Error(error.message || 'Failed to send email with template');
   }
 };
 

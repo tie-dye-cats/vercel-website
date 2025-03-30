@@ -21,10 +21,9 @@ export async function sendEmailWithParams(params: SendEmailParams): Promise<Emai
       params.htmlContent
     );
     return response;
-  } catch (error) {
-    const brevoError = error as BrevoError;
+  } catch (error: any) {
     console.error('Error sending email:', error);
-    throw new Error(brevoError.message || 'Failed to send email');
+    throw new Error(error.message || 'Failed to send email');
   }
 }
 
@@ -36,9 +35,8 @@ export async function createContactWithParams(params: CreateContactParams): Prom
   try {
     const response = await createContact(params.email, params.attributes || {});
     return response;
-  } catch (error) {
-    const brevoError = error as BrevoError;
-    if (brevoError.response?.body?.message?.includes('already exists')) {
+  } catch (error: any) {
+    if (error.message?.includes('already exists')) {
       try {
         // Get existing contact
         const existingContact = await contactsApi.getContactInfo(params.email);
@@ -48,7 +46,7 @@ export async function createContactWithParams(params: CreateContactParams): Prom
         }
 
         // Update contact
-        const updateResponse = await contactsApi.updateContact(params.email, {
+        await contactsApi.updateContact(params.email, {
           attributes: {
             ...(existingContact.body.attributes || {}),
             ...params.attributes
@@ -56,11 +54,11 @@ export async function createContactWithParams(params: CreateContactParams): Prom
         });
 
         return { id: existingContact.body.id };
-      } catch (updateError) {
+      } catch (updateError: any) {
         console.error('Error updating existing contact:', updateError);
-        throw new Error('Failed to update existing contact');
+        throw new Error(updateError.message || 'Failed to update existing contact');
       }
     }
-    throw new Error(brevoError.message || 'Failed to create contact');
+    throw new Error(error.message || 'Failed to create contact');
   }
 } 

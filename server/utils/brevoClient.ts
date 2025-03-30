@@ -12,7 +12,6 @@
 
 import { TransactionalEmailsApi, ContactsApi } from '@getbrevo/brevo/dist/api/apis';
 import { SendSmtpEmail, CreateContact, GetExtendedContactDetails } from '@getbrevo/brevo/dist/model/models';
-import { IncomingMessage } from 'http';
 import { TransactionalEmailsApiApiKeys, ContactsApiApiKeys } from '@getbrevo/brevo/dist/api/apis';
 
 // Initialize API instances with configuration
@@ -56,13 +55,14 @@ export const sendEmail = async (
   sender = { email: 'noreply@physiq.ai', name: 'PhysIQ' }
 ): Promise<EmailResponse> => {
   try {
-    const sendSmtpEmail = new SendSmtpEmail();
-    sendSmtpEmail.to = to.map(email => ({ email: cleanEmail(email) }));
-    sendSmtpEmail.subject = subject;
-    sendSmtpEmail.htmlContent = htmlContent;
-    sendSmtpEmail.sender = sender;
+    const emailData = {
+      sender,
+      to: to.map(email => ({ email: cleanEmail(email) })),
+      subject,
+      htmlContent
+    };
 
-    const response = await transactionalEmailsApi.sendTransacEmail(sendSmtpEmail);
+    const response = await transactionalEmailsApi.sendTransacEmail(emailData);
     if (!response || !response.body) {
       throw new Error('Invalid response from Brevo API');
     }
@@ -79,11 +79,12 @@ export const createContact = async (
   attributes: Record<string, any> = {}
 ): Promise<ContactResponse> => {
   try {
-    const createContact = new CreateContact();
-    createContact.email = cleanEmail(email);
-    createContact.attributes = attributes;
+    const contactData = {
+      email: cleanEmail(email),
+      attributes
+    };
 
-    const response = await contactsApi.createContact(createContact);
+    const response = await contactsApi.createContact(contactData);
     if (!response || !response.body) {
       throw new Error('Invalid response from Brevo API');
     }
@@ -144,13 +145,14 @@ export const sendEmailWithTemplate = async (
   sender = { email: 'noreply@physiq.ai', name: 'PhysIQ' }
 ): Promise<EmailResponse> => {
   try {
-    const sendSmtpEmail = new SendSmtpEmail();
-    sendSmtpEmail.to = to.map(email => ({ email: cleanEmail(email) }));
-    sendSmtpEmail.templateId = templateId;
-    sendSmtpEmail.params = params;
-    sendSmtpEmail.sender = sender;
+    const emailData = {
+      sender,
+      to: to.map(email => ({ email: cleanEmail(email) })),
+      templateId,
+      params
+    };
 
-    const response = await transactionalEmailsApi.sendTransacEmail(sendSmtpEmail);
+    const response = await transactionalEmailsApi.sendTransacEmail(emailData);
     if (!response || !response.body) {
       throw new Error('Invalid response from Brevo API');
     }

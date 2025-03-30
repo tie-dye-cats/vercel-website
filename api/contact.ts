@@ -1,13 +1,14 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { WebClient } from "@slack/web-api";
-import { TransactionalEmailsApi, SendSmtpEmail } from '@sendinblue/client';
+import { TransactionalEmailsApi, TransactionalEmailsApiApiKeys } from '@getbrevo/brevo/dist/api/apis';
+import { SendSmtpEmail } from '@getbrevo/brevo/dist/model/models';
 
 const slackClient = process.env.SLACK_BOT_TOKEN 
   ? new WebClient(process.env.SLACK_BOT_TOKEN)
   : null;
 
 const brevoApi = new TransactionalEmailsApi();
-brevoApi.setApiKey('api-key', process.env.BREVO_API_KEY || '');
+brevoApi.setApiKey(TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY || '');
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {

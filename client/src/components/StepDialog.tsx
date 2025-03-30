@@ -74,14 +74,20 @@ Communication Consent: ${values.communicationConsent ? 'Yes' : 'No'}
         });
 
         console.log("Form submission response status:", response.status);
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error("Form submission error:", errorData);
-          throw new Error(errorData.message || 'Failed to submit form');
+        
+        let responseData;
+        try {
+          responseData = await response.json();
+          console.log("Form submission response data:", responseData);
+        } catch (error) {
+          console.error("Error parsing response:", error);
+          throw new Error('Failed to parse server response');
         }
 
-        const responseData = await response.json();
+        if (!response.ok) {
+          throw new Error(responseData?.message || 'Failed to submit form');
+        }
+
         console.log("Form submission successful:", responseData);
 
         toast({

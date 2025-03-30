@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { sendLeadNotification } from '../../../server/utils/slack';
-import { sendEmailWithParams, createContactWithParams } from '../../../server/utils/brevo';
+import { sendLeadNotification } from '../../../../server/utils/slack';
+import { sendEmailWithParams, createContactWithParams } from '../../../../server/utils/brevo';
 
 export async function POST(request: Request) {
   try {

@@ -58,8 +58,12 @@ Phone: ${values.phone}
 Question: ${values.question}
 Marketing Consent: ${values.marketingConsent ? 'Yes' : 'No'}
 Communication Consent: ${values.communicationConsent ? 'Yes' : 'No'}
-          `.trim()
+          `.trim(),
+          marketingConsent: values.marketingConsent,
+          communicationConsent: values.communicationConsent
         };
+
+        console.log("Sending formatted data:", formattedData);
 
         const response = await fetch('/api/form', {
           method: 'POST',
@@ -71,12 +75,13 @@ Communication Consent: ${values.communicationConsent ? 'Yes' : 'No'}
 
         console.log("Form submission response status:", response.status);
 
-        const responseData = await response.json();
         if (!response.ok) {
-          console.error("Form submission error:", responseData);
-          throw new Error(responseData.message || 'Failed to submit form');
+          const errorData = await response.json();
+          console.error("Form submission error:", errorData);
+          throw new Error(errorData.message || 'Failed to submit form');
         }
 
+        const responseData = await response.json();
         console.log("Form submission successful:", responseData);
 
         toast({

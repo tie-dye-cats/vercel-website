@@ -13,30 +13,27 @@
 import { TransactionalEmailsApi, ContactsApi } from '@getbrevo/brevo/dist/api/apis';
 import { SendSmtpEmail, CreateContact, GetExtendedContactDetails } from '@getbrevo/brevo/dist/model/models';
 import { IncomingMessage } from 'http';
+import { TransactionalEmailsApiApiKeys, ContactsApiApiKeys } from '@getbrevo/brevo/dist/api/apis';
 
 // Initialize API instances with configuration
 const apiKey = process.env.BREVO_API_KEY || '';
-const config = {
-  apiKey: apiKey,
-  basePath: 'https://api.brevo.com/v3'
-};
 
 const transactionalEmailsApi = new TransactionalEmailsApi();
-transactionalEmailsApi.setApiKey(0, apiKey);
+transactionalEmailsApi.setApiKey(TransactionalEmailsApiApiKeys.apiKey, apiKey);
 
 const contactsApi = new ContactsApi();
-contactsApi.setApiKey(0, apiKey);
+contactsApi.setApiKey(ContactsApiApiKeys.apiKey, apiKey);
 
 // Interface definitions
-interface EmailResponse {
+export interface EmailResponse {
   messageId: string;
 }
 
-interface ContactResponse {
+export interface ContactResponse {
   id: number;
 }
 
-interface ContactInfoResponse {
+export interface ContactInfoResponse {
   email: string;
   id: number;
   emailBlacklisted: boolean;
@@ -59,12 +56,11 @@ export const sendEmail = async (
   sender = { email: 'noreply@physiq.ai', name: 'PhysIQ' }
 ): Promise<EmailResponse> => {
   try {
-    const sendSmtpEmail: SendSmtpEmail = {
-      to: to.map(email => ({ email: cleanEmail(email) })),
-      subject,
-      htmlContent,
-      sender
-    };
+    const sendSmtpEmail = new SendSmtpEmail();
+    sendSmtpEmail.to = to.map(email => ({ email: cleanEmail(email) }));
+    sendSmtpEmail.subject = subject;
+    sendSmtpEmail.htmlContent = htmlContent;
+    sendSmtpEmail.sender = sender;
 
     const { body } = await transactionalEmailsApi.sendTransacEmail(sendSmtpEmail);
     return { messageId: body.messageId || '' };
@@ -80,10 +76,9 @@ export const createContact = async (
   attributes: Record<string, any> = {}
 ): Promise<ContactResponse> => {
   try {
-    const createContact: CreateContact = {
-      email: cleanEmail(email),
-      attributes
-    };
+    const createContact = new CreateContact();
+    createContact.email = cleanEmail(email);
+    createContact.attributes = attributes;
 
     const { body } = await contactsApi.createContact(createContact);
     return { id: body.id || 0 };
@@ -138,12 +133,11 @@ export const sendEmailWithTemplate = async (
   sender = { email: 'noreply@physiq.ai', name: 'PhysIQ' }
 ): Promise<EmailResponse> => {
   try {
-    const sendSmtpEmail: SendSmtpEmail = {
-      to: to.map(email => ({ email: cleanEmail(email) })),
-      templateId,
-      params,
-      sender
-    };
+    const sendSmtpEmail = new SendSmtpEmail();
+    sendSmtpEmail.to = to.map(email => ({ email: cleanEmail(email) }));
+    sendSmtpEmail.templateId = templateId;
+    sendSmtpEmail.params = params;
+    sendSmtpEmail.sender = sender;
 
     const { body } = await transactionalEmailsApi.sendTransacEmail(sendSmtpEmail);
     return { messageId: body.messageId || '' };

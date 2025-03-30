@@ -1,5 +1,7 @@
 import type { BrevoError, CreateContactParams, SendEmailParams } from '../types/brevo';
 import { createContact, sendEmail, contactsApi } from './brevoClient';
+import type { EmailResponse, ContactResponse } from './brevoClient';
+import { GetExtendedContactDetails } from '@getbrevo/brevo/dist/model/models';
 
 export { createContact, sendEmail };
 
@@ -7,14 +9,14 @@ export const CONTACT_LISTS = {
   WEBSITE_LEADS: 2
 };
 
-export async function sendEmailWithParams(params: SendEmailParams) {
+export async function sendEmailWithParams(params: SendEmailParams): Promise<EmailResponse> {
   if (!process.env.BREVO_API_KEY) {
     throw new Error('BREVO_API_KEY environment variable is not set');
   }
 
   try {
     const response = await sendEmail(
-      params.to[0].email,
+      [params.to[0].email],
       params.subject,
       params.htmlContent
     );
@@ -26,7 +28,7 @@ export async function sendEmailWithParams(params: SendEmailParams) {
   }
 }
 
-export async function createContactWithParams(params: CreateContactParams) {
+export async function createContactWithParams(params: CreateContactParams): Promise<ContactResponse> {
   if (!process.env.BREVO_API_KEY) {
     throw new Error('BREVO_API_KEY environment variable is not set');
   }
@@ -41,20 +43,19 @@ export async function createContactWithParams(params: CreateContactParams) {
         // Get existing contact
         const existingContact = await contactsApi.getContactInfo(params.email);
         
-        if (!existingContact || !existingContact.id) {
+        if (!existingContact || !existingContact.body) {
           throw new Error('Failed to retrieve existing contact details');
         }
 
         // Update contact
-        const updateResponse = await contactsApi.updateContact(existingContact.id, {
-          ...params,
+        const updateResponse = await contactsApi.updateContact(params.email, {
           attributes: {
-            ...existingContact.attributes,
+            ...(existingContact.body.attributes || {}),
             ...params.attributes
           }
         });
 
-        return updateResponse;
+        return { id: existingContact.body.id };
       } catch (updateError) {
         console.error('Error updating existing contact:', updateError);
         throw new Error('Failed to update existing contact');

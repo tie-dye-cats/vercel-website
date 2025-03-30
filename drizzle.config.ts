@@ -1,14 +1,17 @@
 import { defineConfig } from "drizzle-kit";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL, ensure the database is provisioned");
-}
-
 export default defineConfig({
-  out: "./migrations",
   schema: "./shared/schema.ts",
+  out: "./migrations",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL,
+    host: "db.lakgovlqrvxsrdsnkykl.supabase.co",
+    port: 5432,
+    user: "postgres",
+    password: "S1yIa4wx6sr0okRC",
+    database: "postgres",
+    ssl: {
+      rejectUnauthorized: false
+    }
   },
 });

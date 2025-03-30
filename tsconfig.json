@@ -15,7 +15,8 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["client/src/*"]
+      "@/*": ["client/src/*"],
+      "@shared/*": ["shared/*"]
     },
     "typeRoots": ["./node_modules/@types", "./server/types"],
     "composite": true,
@@ -23,7 +24,7 @@
     "declarationMap": true,
     "outDir": "./dist/client"
   },
-  "include": ["client/src/**/*"],
+  "include": ["client/src/**/*", "shared/**/*"],
   "exclude": ["node_modules", "dist"],
   "references": [
     {

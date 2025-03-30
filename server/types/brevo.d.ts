@@ -64,4 +64,55 @@ export interface SendEmailParams {
   textContent?: string;
   params?: Record<string, any>;
   tags?: string[];
+}
+
+declare module '@getbrevo/brevo' {
+  export interface BrevoContactResponse {
+    id: string;
+    email: string;
+    createdAt: string;
+    attributes: {
+      FIRSTNAME?: string;
+      LASTNAME?: string;
+      [key: string]: any;
+    };
+  }
+
+  export interface BrevoEmailResponse {
+    messageId: string;
+    envelope: {
+      from: string;
+      to: string[];
+    };
+    acceptedAt?: string;
+  }
+
+  export interface BrevoError {
+    response?: {
+      body?: {
+        message?: string;
+        [key: string]: any;
+      };
+    };
+    message?: string;
+  }
+
+  export interface CreateContactParams {
+    email: string;
+    attributes?: Record<string, any>;
+    listIds?: number[];
+  }
+
+  export interface SendEmailParams {
+    to: Array<{
+      email: string;
+      name?: string;
+    }>;
+    subject: string;
+    htmlContent: string;
+    sender?: {
+      name: string;
+      email: string;
+    };
+  }
 } 

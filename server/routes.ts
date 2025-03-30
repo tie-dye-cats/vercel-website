@@ -1,8 +1,26 @@
 import type { Express } from "express";
 import { sendLeadNotification } from "./utils/slack";
-import { sendEmail, createContact } from "./utils/brevo";
+import { sendEmailWithParams, createContactWithParams } from "./utils/brevo";
+import { storage } from "./storage";
 
 export function registerRoutes(app: Express) {
+  // Test endpoint for database connection
+  app.post("/api/test/create-user", async (req, res) => {
+    try {
+      const user = await storage.createUser({
+        email: "test@example.com",
+        name: "Test User"
+      });
+      res.json({ success: true, user });
+    } catch (error: any) {
+      console.error("Error creating test user:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+  });
+
   // Test endpoint for Slack notifications
   app.post("/api/test-slack", async (req, res) => {
     try {
@@ -33,7 +51,7 @@ export function registerRoutes(app: Express) {
   app.post("/api/test-brevo", async (req, res) => {
     try {
       // First create a test contact
-      await createContact({
+      await createContactWithParams({
         email: process.env.CONTACT_EMAIL || 'contact@physiqfitness.com',
         firstName: 'Test',
         attributes: {
@@ -43,7 +61,7 @@ export function registerRoutes(app: Express) {
       });
 
       // Then send a test email
-      const response = await sendEmail({
+      const response = await sendEmailWithParams({
         subject: 'Test Email from Brevo Integration',
         htmlContent: `
           <h2>Test Email</h2>
@@ -81,7 +99,7 @@ export function registerRoutes(app: Express) {
       }
       
       // Create or update contact in Brevo
-      await createContact({
+      await createContactWithParams({
         email,
         firstName,
         attributes: {
@@ -102,7 +120,7 @@ export function registerRoutes(app: Express) {
       });
 
       // Send confirmation email
-      await sendEmail({
+      await sendEmailWithParams({
         subject: 'Thank you for your interest in Physiq Fitness',
         htmlContent: `
           <h2>Thank you for reaching out!</h2>
@@ -141,7 +159,7 @@ export function registerRoutes(app: Express) {
       
       try {
         // Create or update contact in Brevo
-        await createContact({
+        await createContactWithParams({
           email,
           firstName: name,
           attributes: {
@@ -169,7 +187,7 @@ export function registerRoutes(app: Express) {
 
       try {
         // Send confirmation email
-        await sendEmail({
+        await sendEmailWithParams({
           subject: 'Thank you for contacting AdVelocity',
           htmlContent: `
             <h2>Thank you for reaching out!</h2>

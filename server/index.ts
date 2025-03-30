@@ -88,8 +88,8 @@ if (process.env.NODE_ENV === "development") {
   serveStatic(app);
 }
 
-// Start server (use port 3003 for local, process.env.PORT for Vercel/Replit)
-const port = parseInt(process.env.PORT || '3003', 10);
+// Start server (use port 3000 for local, process.env.PORT for Vercel/Replit)
+const port = parseInt(process.env.PORT || '3000', 10);
 const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
 
 const startServer = (port: number) => {

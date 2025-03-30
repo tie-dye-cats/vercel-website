@@ -1,27 +1,23 @@
-import type { ApiClient, BrevoError, CreateContactParams, SendEmailParams } from '../types/brevo';
-import Brevo from '@getbrevo/brevo';
+import type { BrevoError, CreateContactParams, SendEmailParams } from '../types/brevo';
+import { createContact, sendEmail, contactsApi } from './brevoClient';
 
-// Initialize Brevo client
-const brevoClient = new Brevo({
-  apiKey: process.env.BREVO_API_KEY || '',
-}) as ApiClient;
-
-const BREVO_API_URL = 'https://api.brevo.com/v3';
+export { createContact, sendEmail };
 
 export const CONTACT_LISTS = {
   WEBSITE_LEADS: 2
 };
 
-export async function sendEmail(params: SendEmailParams) {
+export async function sendEmailWithParams(params: SendEmailParams) {
   if (!process.env.BREVO_API_KEY) {
     throw new Error('BREVO_API_KEY environment variable is not set');
   }
 
   try {
-    const response = await brevoClient.transactionalEmailsApi.sendTransacEmail({
-      sender: { email: 'noreply@advelocity.ai', name: 'AdVelocity' },
-      ...params
-    });
+    const response = await sendEmail(
+      params.to[0].email,
+      params.subject,
+      params.htmlContent
+    );
     return response;
   } catch (error) {
     const brevoError = error as BrevoError;
@@ -30,27 +26,27 @@ export async function sendEmail(params: SendEmailParams) {
   }
 }
 
-export async function createContact(params: CreateContactParams) {
+export async function createContactWithParams(params: CreateContactParams) {
   if (!process.env.BREVO_API_KEY) {
     throw new Error('BREVO_API_KEY environment variable is not set');
   }
 
   try {
-    const response = await brevoClient.contactsApi.createContact(params);
+    const response = await createContact(params.email, params.attributes || {});
     return response;
   } catch (error) {
     const brevoError = error as BrevoError;
     if (brevoError.response?.body?.message?.includes('already exists')) {
       try {
         // Get existing contact
-        const existingContact = await brevoClient.contactsApi.getContactInfo(params.email);
+        const existingContact = await contactsApi.getContactInfo(params.email);
         
         if (!existingContact || !existingContact.id) {
           throw new Error('Failed to retrieve existing contact details');
         }
 
         // Update contact
-        const updateResponse = await brevoClient.contactsApi.updateContact(existingContact.id, {
+        const updateResponse = await contactsApi.updateContact(existingContact.id, {
           ...params,
           attributes: {
             ...existingContact.attributes,

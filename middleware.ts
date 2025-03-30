@@ -4,7 +4,8 @@ import type { NextRequest } from 'next/server';
 // List of public API routes that don't require authentication
 const PUBLIC_API_ROUTES = [
   '/api/leads',     // Form submissions
-  '/api/form'       // Legacy form endpoint
+  '/api/form',      // Legacy form endpoint
+  '/api/test-brevo' // Test endpoint
 ];
 
 export function middleware(request: NextRequest) {

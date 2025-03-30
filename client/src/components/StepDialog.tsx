@@ -69,23 +69,33 @@ Communication Consent: ${values.communicationConsent ? 'Yes' : 'No'}
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json'
           },
           body: JSON.stringify(formattedData)
         });
 
         console.log("Form submission response status:", response.status);
+        console.log("Form submission response headers:", Object.fromEntries(response.headers.entries()));
         
+        const responseText = await response.text();
+        console.log("Raw response text:", responseText);
+
         let responseData;
         try {
-          responseData = await response.json();
-          console.log("Form submission response data:", responseData);
-        } catch (error) {
-          console.error("Error parsing response:", error);
-          throw new Error('Failed to parse server response');
+          responseData = responseText ? JSON.parse(responseText) : null;
+          console.log("Parsed response data:", responseData);
+        } catch (parseError) {
+          console.error("Error parsing response:", parseError);
+          console.error("Response that failed to parse:", responseText);
+          throw new Error('Failed to parse server response. Please try again.');
         }
 
         if (!response.ok) {
-          throw new Error(responseData?.message || 'Failed to submit form');
+          throw new Error(responseData?.error || responseData?.message || 'Failed to submit form');
+        }
+
+        if (!responseData?.success) {
+          throw new Error(responseData?.error || 'Server returned an unsuccessful response');
         }
 
         console.log("Form submission successful:", responseData);

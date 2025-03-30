@@ -16,26 +16,27 @@ export async function createContact(params: CreateContactParams) {
   }
 
   try {
-    const response = await brevoClient.contactsApi.createContact(params);
-    return response;
+    const createResponse = await brevoClient.contactsApi.createContact(params);
+    return createResponse;
   } catch (error: any) {
     if (error.response?.body?.message?.includes('already exists')) {
-      // Get existing contact
       const getResponse = await brevoClient.contactsApi.getContactInfo(params.email);
       
       if (!getResponse.id) {
         throw new Error('Failed to get contact ID');
       }
 
-      // Update contact
-      const updateResponse = await brevoClient.contactsApi.updateContact(getResponse.id, {
-        ...params,
-        attributes: {
-          ...getResponse.attributes,
-          ...params.attributes
-        }
-      });
+      const updatedAttributes = {
+        ...getResponse.attributes,
+        ...params.attributes
+      };
 
+      const updateParams = {
+        ...params,
+        attributes: updatedAttributes
+      };
+
+      const updateResponse = await brevoClient.contactsApi.updateContact(getResponse.id, updateParams);
       return updateResponse;
     }
     throw error;
@@ -49,10 +50,11 @@ export async function sendEmail(params: SendEmailParams) {
   }
 
   try {
-    const response = await brevoClient.transactionalEmailsApi.sendTransacEmail({
+    const emailParams = {
       sender: { email: 'noreply@advelocity.ai', name: 'AdVelocity' },
       ...params
-    });
+    };
+    const response = await brevoClient.transactionalEmailsApi.sendTransacEmail(emailParams);
     return response;
   } catch (error) {
     console.error('Error sending email:', error);

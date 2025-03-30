@@ -38,22 +38,23 @@ export async function createContactWithParams(params: CreateContactParams): Prom
   } catch (error: any) {
     if (error.message?.includes('already exists')) {
       try {
-        // Get existing contact
         const existingContact = await contactsApi.getContactInfo(params.email);
         
         if (!existingContact || !existingContact.body) {
           throw new Error('Failed to retrieve existing contact details');
         }
 
-        // Update contact
+        const updatedAttributes = {
+          ...(existingContact.body.attributes || {}),
+          ...params.attributes
+        };
+
         await contactsApi.updateContact(params.email, {
-          attributes: {
-            ...(existingContact.body.attributes || {}),
-            ...params.attributes
-          }
+          attributes: updatedAttributes
         });
 
-        return { id: existingContact.body.id };
+        const result = { id: existingContact.body.id };
+        return result;
       } catch (updateError: any) {
         console.error('Error updating existing contact:', updateError);
         throw new Error(updateError.message || 'Failed to update existing contact');

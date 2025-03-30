@@ -147,10 +147,18 @@ export function registerRoutes(app: Express) {
 
   // Contact form submission endpoint
   app.post("/api/form", async (req, res) => {
+    console.log('Form submission received:', {
+      body: req.body,
+      headers: req.headers,
+      method: req.method
+    });
+
     try {
       const { name, email, message, marketingConsent, communicationConsent } = req.body;
+      console.log('Parsed form data:', { name, email, message, marketingConsent, communicationConsent });
 
       if (!name || !email || !message) {
+        console.log('Validation failed:', { name, email, message });
         return res.status(400).json({
           success: false,
           message: "Missing required fields: name, email, and message are required"
@@ -158,6 +166,7 @@ export function registerRoutes(app: Express) {
       }
       
       try {
+        console.log('Creating/updating contact in Brevo...');
         // Create or update contact in Brevo
         await createContactWithParams({
           email,
@@ -170,12 +179,18 @@ export function registerRoutes(app: Express) {
             COMMUNICATION_CONSENT: communicationConsent || false
           }
         });
-      } catch (error) {
-        console.error("Error creating/updating contact:", error);
+        console.log('Contact created/updated successfully');
+      } catch (error: any) {
+        console.error("Error creating/updating contact:", {
+          error: error.message,
+          stack: error.stack,
+          details: error.response?.body || error.message
+        });
         // Continue with the form submission even if Brevo fails
       }
 
       try {
+        console.log('Sending Slack notification...');
         // Send notification to Slack
         await sendLeadNotification({
           firstName: name,
@@ -184,14 +199,20 @@ export function registerRoutes(app: Express) {
           marketingConsent: marketingConsent || false,
           communicationConsent: communicationConsent || false
         });
-      } catch (error) {
-        console.error("Error sending Slack notification:", error);
+        console.log('Slack notification sent successfully');
+      } catch (error: any) {
+        console.error("Error sending Slack notification:", {
+          error: error.message,
+          stack: error.stack,
+          details: error.response?.body || error.message
+        });
         // Continue with the form submission even if Slack fails
       }
 
       try {
         // Send confirmation email only if they consented to communication
         if (communicationConsent) {
+          console.log('Sending confirmation email...');
           await sendEmailWithParams({
             subject: 'Thank you for contacting AdVelocity',
             htmlContent: `
@@ -204,22 +225,40 @@ export function registerRoutes(app: Express) {
             `,
             to: [{ email, name }]
           });
+          console.log('Confirmation email sent successfully');
+        } else {
+          console.log('Skipping confirmation email - no communication consent');
         }
-      } catch (error) {
-        console.error("Error sending confirmation email:", error);
+      } catch (error: any) {
+        console.error("Error sending confirmation email:", {
+          error: error.message,
+          stack: error.stack,
+          details: error.response?.body || error.message
+        });
         // Continue with the form submission even if email fails
       }
       
-      return res.json({ 
+      console.log('Form submission completed successfully');
+      const response = { 
         success: true,
         message: "Form submission successful"
-      });
+      };
+      console.log('Sending response:', response);
+      return res.json(response);
     } catch (error: any) {
-      console.error("Form submission error:", error);
-      return res.status(500).json({ 
-        success: false, 
-        message: error.message || "Error submitting form"
+      console.error("Form submission error:", {
+        error: error.message,
+        stack: error.stack,
+        details: error.response?.body || error.message,
+        body: req.body
       });
+      const errorResponse = {
+        success: false,
+        message: error.message || "Error submitting form",
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      };
+      console.log('Sending error response:', errorResponse);
+      return res.status(500).json(errorResponse);
     }
   });
 }

@@ -89,7 +89,7 @@ export function registerRoutes(app: Express) {
   // Lead form submission endpoint
   app.post("/api/leads", async (req, res) => {
     try {
-      const { firstName, lastName, email, phone, company } = req.body;
+      const { firstName, lastName, email, phone, company, question, marketingConsent, communicationConsent } = req.body;
 
       if (!firstName || !email || !phone) {
         return res.status(400).json({
@@ -106,8 +106,11 @@ export function registerRoutes(app: Express) {
           LASTNAME: lastName || '',
           COMPANY: company || '',
           PHONE: phone,
+          QUESTION: question || '',
           SOURCE: 'Website Lead Form',
-          SIGNUP_DATE: new Date().toISOString()
+          SIGNUP_DATE: new Date().toISOString(),
+          MARKETING_CONSENT: marketingConsent || false,
+          COMMUNICATION_CONSENT: communicationConsent || false
         }
       });
 
@@ -116,20 +119,25 @@ export function registerRoutes(app: Express) {
         firstName,
         email,
         phone,
-        question: `Company: ${company || 'Not provided'}`
+        question: question || `Company: ${company || 'Not provided'}`,
+        marketingConsent: marketingConsent || false,
+        communicationConsent: communicationConsent || false
       });
 
-      // Send confirmation email
-      await sendEmailWithParams({
-        subject: 'Thank you for your interest in Physiq Fitness',
-        htmlContent: `
-          <h2>Thank you for reaching out!</h2>
-          <p>Hi ${firstName},</p>
-          <p>We have received your information and one of our experts will be in touch with you shortly.</p>
-          <p>Best regards,<br>The Physiq Fitness Team</p>
-        `,
-        to: [{ email, name: firstName }]
-      });
+      // Send confirmation email only if they consented to communication
+      if (communicationConsent) {
+        await sendEmailWithParams({
+          subject: 'Thank you for your interest in AdVelocity',
+          htmlContent: `
+            <h2>Thank you for reaching out!</h2>
+            <p>Hi ${firstName},</p>
+            <p>We have received your information and one of our experts will be in touch with you shortly.</p>
+            ${question ? `<p>Your message:</p><blockquote>${question}</blockquote>` : ''}
+            <p>Best regards,<br>The AdVelocity Team</p>
+          `,
+          to: [{ email, name: firstName }]
+        });
+      }
       
       return res.json({ 
         success: true,

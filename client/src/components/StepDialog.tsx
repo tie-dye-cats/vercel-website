@@ -49,56 +49,37 @@ export function StepDialog({ isOpen, onClose }: StepDialogProps) {
         const values = form.getValues();
         console.log("Starting form submission with data:", values);
 
-        // Format the data to match the /api/form endpoint expectations
+        // Format the data to match the /api/leads endpoint expectations
         const formattedData = {
-          name: values.firstName,
+          firstName: values.firstName,
           email: values.email,
-          message: `
-Phone: ${values.phone}
-Question: ${values.question}
-Marketing Consent: ${values.marketingConsent ? 'Yes' : 'No'}
-Communication Consent: ${values.communicationConsent ? 'Yes' : 'No'}
-          `.trim(),
+          phone: values.phone,
+          company: 'Not provided', // Default value
+          question: values.question,
           marketingConsent: values.marketingConsent,
           communicationConsent: values.communicationConsent
         };
 
         console.log("Sending formatted data:", formattedData);
 
-        const response = await fetch('/api/form', {
+        const response = await fetch('/api/leads', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Accept': 'application/json'
           },
           body: JSON.stringify(formattedData)
         });
 
-        console.log("Form submission response status:", response.status);
-        console.log("Form submission response headers:", Object.fromEntries(response.headers.entries()));
-        
-        const responseText = await response.text();
-        console.log("Raw response text:", responseText);
-
-        let responseData;
-        try {
-          responseData = responseText ? JSON.parse(responseText) : null;
-          console.log("Parsed response data:", responseData);
-        } catch (parseError) {
-          console.error("Error parsing response:", parseError);
-          console.error("Response that failed to parse:", responseText);
-          throw new Error('Failed to parse server response. Please try again.');
-        }
-
         if (!response.ok) {
-          throw new Error(responseData?.error || responseData?.message || 'Failed to submit form');
+          const errorData = await response.json().catch(() => null);
+          throw new Error(errorData?.message || `Server error: ${response.status}`);
         }
 
+        const responseData = await response.json();
+        
         if (!responseData?.success) {
-          throw new Error(responseData?.error || 'Server returned an unsuccessful response');
+          throw new Error(responseData?.message || 'Server returned an unsuccessful response');
         }
-
-        console.log("Form submission successful:", responseData);
 
         toast({
           title: "Success! 🎯",
@@ -120,8 +101,6 @@ Communication Consent: ${values.communicationConsent ? 'Yes' : 'No'}
       const fieldName = currentField.name as keyof z.infer<typeof formSchema>;
       const fieldValue = form.getValues(fieldName);
       const fieldError = await form.trigger(fieldName);
-
-      console.log(`Field validation - Name: ${fieldName}, Value: ${fieldValue}, Valid: ${fieldError}`);
 
       if (!fieldError || !fieldValue) {
         return;

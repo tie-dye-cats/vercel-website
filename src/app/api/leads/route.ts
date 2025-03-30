@@ -1,70 +1,88 @@
 import { NextResponse } from 'next/server';
-import { sendLeadNotification } from '../../../../server/utils/slack';
-import { sendEmailWithParams, createContactWithParams } from '../../../../server/utils/brevo';
+import { createOrUpdateContact, sendTransactionalEmail, emailTemplates } from '../../../utils/brevoClient';
+import { z } from 'zod';
+
+// Input validation schema
+const leadSchema = z.object({
+  firstName: z.string().min(1, 'First name is required'),
+  email: z.string().email('Invalid email address'),
+  phone: z.string().optional(),
+  message: z.string().optional(),
+  company: z.string().optional(),
+});
 
 export async function POST(request: Request) {
   try {
+    // Parse and validate request body
     const body = await request.json();
-    const { firstName, lastName, email, phone, company, question, marketingConsent, communicationConsent } = body;
+    const validatedData = leadSchema.parse(body);
 
-    if (!firstName || !email || !phone) {
-      return NextResponse.json({
-        success: false,
-        message: "Missing required fields: firstName, email, and phone are required"
-      }, { status: 400 });
-    }
-    
     // Create or update contact in Brevo
-    await createContactWithParams({
-      email,
-      firstName,
+    await createOrUpdateContact({
+      email: validatedData.email,
+      firstName: validatedData.firstName,
       attributes: {
-        LASTNAME: lastName || '',
-        COMPANY: company || '',
-        PHONE: phone,
-        QUESTION: question || '',
-        SOURCE: 'Website Lead Form',
-        SIGNUP_DATE: new Date().toISOString(),
-        MARKETING_CONSENT: marketingConsent || false,
-        COMMUNICATION_CONSENT: communicationConsent || false
+        PHONE: validatedData.phone || '',
+        COMPANY: validatedData.company || '',
+        MESSAGE: validatedData.message || '',
+        SOURCE: 'Website Form'
       }
     });
 
-    // Send notification to Slack
-    await sendLeadNotification({
-      firstName,
-      email,
-      phone,
-      question: question || `Company: ${company || 'Not provided'}`,
-      marketingConsent: marketingConsent || false,
-      communicationConsent: communicationConsent || false
+    // Send confirmation email to user
+    await sendTransactionalEmail({
+      to: [{ email: validatedData.email, name: validatedData.firstName }],
+      subject: 'Thank you for contacting AdVelocity',
+      htmlContent: emailTemplates.contactFormTemplate(
+        validatedData.firstName,
+        validatedData.message || ''
+      )
     });
 
-    // Send confirmation email only if they consented to communication
-    if (communicationConsent) {
-      await sendEmailWithParams({
-        subject: 'Thank you for your interest in AdVelocity',
-        htmlContent: `
-          <h2>Thank you for reaching out!</h2>
-          <p>Hi ${firstName},</p>
-          <p>We have received your information and one of our experts will be in touch with you shortly.</p>
-          ${question ? `<p>Your message:</p><blockquote>${question}</blockquote>` : ''}
-          <p>Best regards,<br>The AdVelocity Team</p>
-        `,
-        to: [{ email, name: firstName }]
-      });
-    }
-    
-    return NextResponse.json({ 
-      success: true,
-      message: "Lead form submission successful"
+    // Send notification email to admin
+    await sendTransactionalEmail({
+      to: [{ email: process.env.ADMIN_EMAIL || process.env.EMAIL_FROM || '' }],
+      subject: 'New Contact Form Submission',
+      htmlContent: `
+        <div style="font-family: Arial, sans-serif;">
+          <h2>New Contact Form Submission</h2>
+          <p><strong>Name:</strong> ${validatedData.firstName}</p>
+          <p><strong>Email:</strong> ${validatedData.email}</p>
+          ${validatedData.phone ? `<p><strong>Phone:</strong> ${validatedData.phone}</p>` : ''}
+          ${validatedData.company ? `<p><strong>Company:</strong> ${validatedData.company}</p>` : ''}
+          ${validatedData.message ? `<p><strong>Message:</strong></p><p>${validatedData.message}</p>` : ''}
+        </div>
+      `
     });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Form submitted successfully'
+    });
+
   } catch (error: any) {
-    console.error("Lead form submission error:", error);
-    return NextResponse.json({ 
+    console.error('Lead form submission error:', error);
+
+    // Handle validation errors
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({
+        success: false,
+        message: 'Invalid form data',
+        errors: error.errors
+      }, { status: 400 });
+    }
+
+    // Handle Brevo API errors
+    if (error.response?.status === 429) {
+      return NextResponse.json({
+        success: false,
+        message: 'Too many requests, please try again later'
+      }, { status: 429 });
+    }
+
+    return NextResponse.json({
       success: false,
-      message: "Error submitting lead form",
-      error: error.message 
+      message: 'An error occurred while processing your request'
     }, { status: 500 });
   }
 } 

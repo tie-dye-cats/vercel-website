@@ -148,7 +148,7 @@ export function registerRoutes(app: Express) {
   // Contact form submission endpoint
   app.post("/api/form", async (req, res) => {
     try {
-      const { name, email, message } = req.body;
+      const { name, email, message, marketingConsent, communicationConsent } = req.body;
 
       if (!name || !email || !message) {
         return res.status(400).json({
@@ -165,7 +165,9 @@ export function registerRoutes(app: Express) {
           attributes: {
             LAST_MESSAGE: message,
             SOURCE: 'Website Form',
-            SIGNUP_DATE: new Date().toISOString()
+            SIGNUP_DATE: new Date().toISOString(),
+            MARKETING_CONSENT: marketingConsent || false,
+            COMMUNICATION_CONSENT: communicationConsent || false
           }
         });
       } catch (error) {
@@ -178,7 +180,9 @@ export function registerRoutes(app: Express) {
         await sendLeadNotification({
           firstName: name,
           email,
-          question: message
+          question: message,
+          marketingConsent: marketingConsent || false,
+          communicationConsent: communicationConsent || false
         });
       } catch (error) {
         console.error("Error sending Slack notification:", error);
@@ -186,19 +190,21 @@ export function registerRoutes(app: Express) {
       }
 
       try {
-        // Send confirmation email
-        await sendEmailWithParams({
-          subject: 'Thank you for contacting AdVelocity',
-          htmlContent: `
-            <h2>Thank you for reaching out!</h2>
-            <p>Hi ${name},</p>
-            <p>We have received your message and will get back to you shortly.</p>
-            <p>Your message:</p>
-            <blockquote>${message}</blockquote>
-            <p>Best regards,<br>The AdVelocity Team</p>
-          `,
-          to: [{ email, name }]
-        });
+        // Send confirmation email only if they consented to communication
+        if (communicationConsent) {
+          await sendEmailWithParams({
+            subject: 'Thank you for contacting AdVelocity',
+            htmlContent: `
+              <h2>Thank you for reaching out!</h2>
+              <p>Hi ${name},</p>
+              <p>We have received your message and will get back to you shortly.</p>
+              <p>Your message:</p>
+              <blockquote>${message}</blockquote>
+              <p>Best regards,<br>The AdVelocity Team</p>
+            `,
+            to: [{ email, name }]
+          });
+        }
       } catch (error) {
         console.error("Error sending confirmation email:", error);
         // Continue with the form submission even if email fails

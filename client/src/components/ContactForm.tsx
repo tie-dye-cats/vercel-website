@@ -17,7 +17,11 @@ import { useToast } from "@/hooks/use-toast"
 const formSchema = z.object({
   firstName: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
-  message: z.string().min(10, "Message must be at least 10 characters"),
+  phone: z.string().min(10, "Please enter a valid phone number"),
+  company: z.string().optional(),
+  question: z.string().min(10, "Message must be at least 10 characters"),
+  marketingConsent: z.boolean().default(false),
+  communicationConsent: z.boolean().default(false)
 })
 
 export function ContactForm() {
@@ -27,7 +31,11 @@ export function ContactForm() {
     defaultValues: {
       firstName: "",
       email: "",
-      message: "",
+      phone: "",
+      company: "",
+      question: "",
+      marketingConsent: false,
+      communicationConsent: false
     },
   })
 
@@ -39,13 +47,7 @@ export function ContactForm() {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        body: JSON.stringify({
-          firstName: values.firstName,
-          email: values.email,
-          phone: 'Not provided',
-          company: 'Not provided',
-          question: values.message
-        })
+        body: JSON.stringify(values)
       });
 
       const data = await response.json();
@@ -101,7 +103,33 @@ export function ContactForm() {
         />
         <FormField
           control={form.control}
-          name="message"
+          name="phone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Phone</FormLabel>
+              <FormControl>
+                <Input type="tel" placeholder="Your phone number" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="company"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Company (Optional)</FormLabel>
+              <FormControl>
+                <Input placeholder="Your company name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="question"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Message</FormLabel>
@@ -116,6 +144,46 @@ export function ContactForm() {
             </FormItem>
           )}
         />
+        <div className="space-y-4">
+          <FormField
+            control={form.control}
+            name="marketingConsent"
+            render={({ field }) => (
+              <FormItem className="flex items-center space-x-2">
+                <FormControl>
+                  <input
+                    type="checkbox"
+                    checked={field.value}
+                    onChange={field.onChange}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                </FormControl>
+                <FormLabel className="text-sm">
+                  I agree to receive marketing communications
+                </FormLabel>
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="communicationConsent"
+            render={({ field }) => (
+              <FormItem className="flex items-center space-x-2">
+                <FormControl>
+                  <input
+                    type="checkbox"
+                    checked={field.value}
+                    onChange={field.onChange}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                </FormControl>
+                <FormLabel className="text-sm">
+                  I agree to receive communication about my inquiry
+                </FormLabel>
+              </FormItem>
+            )}
+          />
+        </div>
         <Button type="submit" className="w-full bg-black hover:bg-gray-800">
           Send Message
         </Button>

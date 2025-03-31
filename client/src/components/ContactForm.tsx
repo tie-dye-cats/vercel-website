@@ -1,6 +1,7 @@
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
+import { useState } from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -12,75 +13,77 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
 
 const formSchema = z.object({
-  firstName: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  phone: z.string().min(10, "Please enter a valid phone number"),
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().email('Invalid email address'),
+  phone: z.string().optional(),
   company: z.string().optional(),
-  question: z.string().min(10, "Message must be at least 10 characters"),
-  marketingConsent: z.boolean().default(false),
-  communicationConsent: z.boolean().default(false)
-})
+  message: z.string().min(10, 'Message must be at least 10 characters'),
+  marketingConsent: z.boolean().optional(),
+  communicationConsent: z.boolean().optional(),
+});
 
-export function ContactForm() {
+type FormData = z.infer<typeof formSchema>;
+
+export default function ContactForm() {
   const { toast } = useToast()
-  const form = useForm<z.infer<typeof formSchema>>({
+  const [loading, setLoading] = useState(false);
+  const [responseMsg, setResponseMsg] = useState('');
+
+  const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      firstName: "",
-      email: "",
-      phone: "",
-      company: "",
-      question: "",
+      name: '',
+      email: '',
+      phone: '',
+      company: '',
+      message: '',
       marketingConsent: false,
-      communicationConsent: false
+      communicationConsent: false,
     },
-  })
+  });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  const onSubmit = async (values: FormData) => {
+    setLoading(true);
+    setResponseMsg('');
+
     try {
-      const response = await fetch('/api/leads', {
+      const response = await fetch('/api/submit', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
         },
-        body: JSON.stringify(values)
+        body: JSON.stringify(values),
       });
 
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to submit form');
+      const result = await response.json();
+
+      if (response.ok) {
+        setResponseMsg('Thank you for your message! We will get back to you soon.');
+        form.reset();
+      } else {
+        setResponseMsg(result.error || 'Something went wrong. Please try again.');
       }
-
-      toast({
-        title: "Success!",
-        description: "Thank you for your message. We'll get back to you shortly!",
-      });
-
-      form.reset();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Form submission error:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message || "There was a problem sending your message. Please try again.",
-      });
+      setResponseMsg('Error submitting form. Please try again.');
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
-          name="firstName"
+          name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Name</FormLabel>
+              <FormLabel>Name *</FormLabel>
               <FormControl>
                 <Input placeholder="Your name" {...field} />
               </FormControl>
@@ -93,9 +96,9 @@ export function ContactForm() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Email *</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="Your email" {...field} />
+                <Input type="email" placeholder="your@email.com" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -119,9 +122,9 @@ export function ContactForm() {
           name="company"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Company (Optional)</FormLabel>
+              <FormLabel>Company</FormLabel>
               <FormControl>
-                <Input placeholder="Your company name" {...field} />
+                <Input placeholder="Your company" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -129,16 +132,12 @@ export function ContactForm() {
         />
         <FormField
           control={form.control}
-          name="question"
+          name="message"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Message</FormLabel>
+              <FormLabel>Message *</FormLabel>
               <FormControl>
-                <Textarea 
-                  placeholder="How can we help you?" 
-                  className="min-h-[120px]"
-                  {...field} 
-                />
+                <Textarea placeholder="Your message" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -149,18 +148,18 @@ export function ContactForm() {
             control={form.control}
             name="marketingConsent"
             render={({ field }) => (
-              <FormItem className="flex items-center space-x-2">
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                 <FormControl>
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={field.value}
-                    onChange={field.onChange}
-                    className="h-4 w-4 rounded border-gray-300"
+                    onCheckedChange={field.onChange}
                   />
                 </FormControl>
-                <FormLabel className="text-sm">
-                  I agree to receive marketing communications
-                </FormLabel>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>
+                    I agree to receive marketing communications
+                  </FormLabel>
+                </div>
               </FormItem>
             )}
           />
@@ -168,25 +167,30 @@ export function ContactForm() {
             control={form.control}
             name="communicationConsent"
             render={({ field }) => (
-              <FormItem className="flex items-center space-x-2">
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                 <FormControl>
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={field.value}
-                    onChange={field.onChange}
-                    className="h-4 w-4 rounded border-gray-300"
+                    onCheckedChange={field.onChange}
                   />
                 </FormControl>
-                <FormLabel className="text-sm">
-                  I agree to receive communication about my inquiry
-                </FormLabel>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>
+                    I agree to receive communication about my inquiry
+                  </FormLabel>
+                </div>
               </FormItem>
             )}
           />
         </div>
-        <Button type="submit" className="w-full bg-black hover:bg-gray-800">
-          Send Message
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? 'Submitting...' : 'Submit'}
         </Button>
+        {responseMsg && (
+          <p className={`mt-2 text-sm ${responseMsg.includes('Thank you') ? 'text-green-600' : 'text-red-600'}`}>
+            {responseMsg}
+          </p>
+        )}
       </form>
     </Form>
   )

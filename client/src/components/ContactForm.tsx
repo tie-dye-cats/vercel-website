@@ -28,7 +28,7 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function ContactForm() {
+export function ContactForm() {
   const { toast } = useToast()
   const [loading, setLoading] = useState(false);
   const [responseMsg, setResponseMsg] = useState('');

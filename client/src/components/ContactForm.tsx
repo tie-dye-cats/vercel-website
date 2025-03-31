@@ -56,6 +56,15 @@ export function ContactForm() {
     },
   });
 
+  const handleError = (error: any) => {
+    console.error('Form submission error:', error);
+    toast({
+      title: error.error || "Error",
+      description: error.details || 'Something went wrong. Please try again.',
+      variant: "destructive",
+    });
+  };
+
   const onSubmitInitial = async (values: InitialFormData) => {
     setLoading(true);
     try {
@@ -77,19 +86,17 @@ export function ContactForm() {
         setInitialFormData(values);
         setShowPhoneForm(true);
         initialForm.reset();
-      } else {
         toast({
-          title: "Error",
-          description: result.error || 'Something went wrong. Please try again.',
-          variant: "destructive",
+          title: "Success",
+          description: "Thank you! We've received your information.",
         });
+      } else {
+        handleError(result);
       }
     } catch (error) {
-      console.error('Form submission error:', error);
-      toast({
-        title: "Error",
-        description: 'Error submitting form. Please try again.',
-        variant: "destructive",
+      handleError({
+        error: 'Network Error',
+        details: 'Unable to connect to the server. Please check your internet connection and try again.'
       });
     } finally {
       setLoading(false);
@@ -124,18 +131,12 @@ export function ContactForm() {
         setShowPhoneForm(false);
         setInitialFormData(null);
       } else {
-        toast({
-          title: "Error",
-          description: result.error || 'Something went wrong. Please try again.',
-          variant: "destructive",
-        });
+        handleError(result);
       }
     } catch (error) {
-      console.error('Form submission error:', error);
-      toast({
-        title: "Error",
-        description: 'Error submitting form. Please try again.',
-        variant: "destructive",
+      handleError({
+        error: 'Network Error',
+        details: 'Unable to connect to the server. Please check your internet connection and try again.'
       });
     } finally {
       setLoading(false);

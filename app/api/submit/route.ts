@@ -2,14 +2,76 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
-    const data = await request.json();
+    // Validate request body
+    let data;
+    try {
+      data = await request.json();
+    } catch (error) {
+      console.error('Invalid JSON in request body:', error);
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Invalid request format',
+          details: 'Request body must be valid JSON'
+        },
+        { status: 400 }
+      );
+    }
+
     const { firstName, email, phone, consent, phoneConsent } = data;
+
+    // Validate required fields
+    if (!firstName?.trim()) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'First name is required',
+          details: 'Please provide your first name'
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!email?.trim()) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Email is required',
+          details: 'Please provide your email address'
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!consent) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Consent is required',
+          details: 'Please agree to receive communications'
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Invalid email format',
+          details: 'Please provide a valid email address'
+        },
+        { status: 400 }
+      );
+    }
 
     // Clean the data
     const cleanedData = {
       properties: {
-        firstname: String(firstName || '').trim(),
-        email: String(email || '').trim(),
+        firstname: String(firstName).trim(),
+        email: String(email).trim(),
         phone: phone ? String(phone).trim() : undefined,
         consent: consent ? "Yes" : "No",
         phone_consent: phoneConsent ? "Yes" : "No",
@@ -18,11 +80,17 @@ export async function POST(request: Request) {
       }
     };
 
-    // Validate required fields
-    if (!cleanedData.properties.email) {
+    // Check for Brevo API key
+    const brevoApiKey = process.env.BREVO_API_KEY;
+    if (!brevoApiKey) {
+      console.error('Brevo API key is not configured');
       return NextResponse.json(
-        { error: 'Email is required' },
-        { status: 400 }
+        { 
+          success: false,
+          error: 'Server configuration error',
+          details: 'Contact form is not properly configured'
+        },
+        { status: 500 }
       );
     }
 
@@ -31,14 +99,23 @@ export async function POST(request: Request) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'api-key': process.env.BREVO_API_KEY || '',
+        'api-key': brevoApiKey,
       },
       body: JSON.stringify(cleanedData)
     });
 
+    const result = await response.json();
+
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to create contact in Brevo');
+      console.error('Brevo API error:', result);
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Failed to create contact',
+          details: result.message || 'Error creating contact in Brevo'
+        },
+        { status: response.status }
+      );
     }
 
     return NextResponse.json({ 
@@ -46,12 +123,12 @@ export async function POST(request: Request) {
       message: 'Form submitted successfully'
     });
   } catch (error) {
-    console.error('Form submission error:', error);
+    console.error('Unexpected error in form submission:', error);
     return NextResponse.json(
       { 
         success: false,
-        error: 'Failed to submit form',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'An unexpected error occurred'
       },
       { status: 500 }
     );

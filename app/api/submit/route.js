@@ -7,26 +7,69 @@ import { NextResponse } from 'next/server';
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+
+// Log environment variable status
+console.log('Environment Variables Status:', {
+  hasSupabaseUrl: !!supabaseUrl,
+  hasSupabaseKey: !!supabaseKey,
+  hasBrevoKey: !!process.env.BREVO_API_KEY,
+  hasBrevoListId: !!process.env.BREVO_LIST_ID,
+  hasClickUpToken: !!process.env.CLICKUP_API_TOKEN,
+  hasClickUpListId: !!process.env.CLICKUP_LIST_ID
+});
+
+let supabase = null;
+try {
+  if (supabaseUrl && supabaseKey) {
+    supabase = createClient(supabaseUrl, supabaseKey);
+    console.log('Supabase client initialized successfully');
+  } else {
+    console.error('Missing Supabase credentials:', { supabaseUrl: !!supabaseUrl, supabaseKey: !!supabaseKey });
+  }
+} catch (error) {
+  console.error('Error initializing Supabase client:', error);
+}
 
 // Initialize Brevo client
-const brevoApiKey = process.env.BREVO_API_KEY;
-const brevoListId = process.env.BREVO_LIST_ID;
-const brevoClient = brevoApiKey ? new ContactsApi({
-  basePath: 'https://api.brevo.com/v3',
-  apiKey: brevoApiKey
-}) : null;
+let brevoClient = null;
+try {
+  const brevoApiKey = process.env.BREVO_API_KEY;
+  if (brevoApiKey) {
+    brevoClient = new ContactsApi({
+      basePath: 'https://api.brevo.com/v3',
+      apiKey: brevoApiKey
+    });
+    console.log('Brevo client initialized successfully');
+  } else {
+    console.warn('Brevo API key not provided');
+  }
+} catch (error) {
+  console.error('Error initializing Brevo client:', error);
+}
 
 // Initialize ClickUp client
-const clickupApiToken = process.env.CLICKUP_API_TOKEN;
-const clickupListId = process.env.CLICKUP_LIST_ID;
-const clickupClient = clickupApiToken && clickupListId ? axios.create({
-  baseURL: 'https://api.clickup.com/api/v2',
-  headers: {
-    'Authorization': clickupApiToken,
-    'Content-Type': 'application/json'
+let clickupClient = null;
+try {
+  const clickupApiToken = process.env.CLICKUP_API_TOKEN;
+  const clickupListId = process.env.CLICKUP_LIST_ID;
+  if (clickupApiToken && clickupListId) {
+    clickupClient = axios.create({
+      baseURL: 'https://api.clickup.com/api/v2',
+      headers: {
+        'Authorization': clickupApiToken,
+        'Content-Type': 'application/json'
+      }
+    });
+    console.log('ClickUp client initialized successfully');
+  } else {
+    console.warn('ClickUp credentials not complete:', { 
+      hasToken: !!clickupApiToken, 
+      hasListId: !!clickupListId 
+    });
   }
-}) : null;
+} catch (error) {
+  console.error('Error initializing ClickUp client:', error);
+}
 
 // Validation schema
 const submissionSchema = z.object({
@@ -51,11 +94,13 @@ export async function OPTIONS(request) {
 }
 
 export async function POST(request) {
+  console.log('Received form submission request');
   try {
     // Validate request body
     let data;
     try {
       data = await request.json();
+      console.log('Received data:', JSON.stringify(data));
     } catch (error) {
       console.error('Invalid JSON in request body:', error);
       return NextResponse.json(
@@ -72,6 +117,7 @@ export async function POST(request) {
     const validationResult = submissionSchema.safeParse(data);
     if (!validationResult.success) {
       const errors = validationResult.error.flatten().fieldErrors;
+      console.error('Validation failed:', errors);
       return NextResponse.json(
         {
           success: false,
@@ -83,20 +129,27 @@ export async function POST(request) {
     }
 
     const validatedData = validationResult.data;
+    console.log('Validation successful:', validatedData);
 
-    // Insert into Supabase
+    // Check Supabase configuration
     if (!supabase) {
-      console.warn('Supabase is not configured');
+      console.error('Supabase client not initialized');
       return NextResponse.json(
         {
           success: false,
           error: 'Server configuration error',
-          details: 'Database is not properly configured'
+          details: 'Database is not properly configured',
+          env: {
+            hasUrl: !!supabaseUrl,
+            hasKey: !!supabaseKey
+          }
         },
         { status: 500 }
       );
     }
 
+    // Insert into Supabase
+    console.log('Attempting Supabase insert...');
     const { data: supabaseData, error: supabaseError } = await supabase
       .from('contact_submissions')
       .insert([
@@ -117,17 +170,25 @@ export async function POST(request) {
         {
           success: false,
           error: 'Database error',
-          details: 'Failed to save submission'
+          details: supabaseError.message,
+          code: supabaseError.code
         },
         { status: 500 }
       );
     }
 
+    console.log('Supabase insert successful:', supabaseData);
+
     // Execute Brevo and ClickUp integrations in parallel
     const integrationPromises = [];
+    const integrationResults = {
+      brevo: null,
+      clickup: null
+    };
 
     // Add Brevo integration if configured
     if (brevoClient) {
+      console.log('Attempting Brevo integration...');
       integrationPromises.push(
         (async () => {
           try {
@@ -139,14 +200,21 @@ export async function POST(request) {
               updateEnabled: true
             };
 
+            const brevoListId = process.env.BREVO_LIST_ID;
             if (brevoListId && !isNaN(brevoListId)) {
               contactData.listIds = [parseInt(brevoListId)];
             }
 
-            return await brevoClient.createContact(contactData);
+            const result = await brevoClient.createContact(contactData);
+            console.log('Brevo integration successful');
+            integrationResults.brevo = { success: true };
+            return result;
           } catch (error) {
             console.error('Brevo API error:', error);
-            // Don't throw, just log the error
+            integrationResults.brevo = { 
+              success: false, 
+              error: error.message 
+            };
             return null;
           }
         })()
@@ -155,6 +223,7 @@ export async function POST(request) {
 
     // Add ClickUp integration if configured
     if (clickupClient) {
+      console.log('Attempting ClickUp integration...');
       integrationPromises.push(
         (async () => {
           try {
@@ -169,13 +238,19 @@ Question:
 ${validatedData.question}
             `.trim();
 
-            return await clickupClient.post(`/list/${clickupListId}/task`, {
+            const result = await clickupClient.post(`/list/${process.env.CLICKUP_LIST_ID}/task`, {
               name: taskName,
               description: taskDescription
             });
+            console.log('ClickUp integration successful');
+            integrationResults.clickup = { success: true };
+            return result;
           } catch (error) {
             console.error('ClickUp API error:', error);
-            // Don't throw, just log the error
+            integrationResults.clickup = { 
+              success: false, 
+              error: error.message 
+            };
             return null;
           }
         })()
@@ -184,6 +259,7 @@ ${validatedData.question}
 
     // Execute all integrations in parallel
     if (integrationPromises.length > 0) {
+      console.log('Executing integrations...');
       const results = await Promise.allSettled(integrationPromises);
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
@@ -196,7 +272,8 @@ ${validatedData.question}
     return NextResponse.json({
       success: true,
       message: 'Form submitted successfully',
-      supabaseId: supabaseData.id
+      supabaseId: supabaseData.id,
+      integrations: integrationResults
     });
 
   } catch (error) {
@@ -205,7 +282,8 @@ ${validatedData.question}
       {
         success: false,
         error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'An unexpected error occurred'
+        details: error instanceof Error ? error.message : 'An unexpected error occurred',
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
       },
       { status: 500 }
     );

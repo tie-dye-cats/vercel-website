@@ -124,34 +124,42 @@ export async function POST(request) {
     }
 
     // Execute Brevo and ClickUp integrations in parallel
-    const [brevoResult, clickupResult] = await Promise.allSettled([
-      // Brevo integration
-      brevoClient ? (async () => {
-        try {
-          const contactData = {
-            email: validatedData.email,
-            attributes: {
-              FIRSTNAME: validatedData.firstName
-            },
-            updateEnabled: true
-          };
+    const integrationPromises = [];
 
-          if (brevoListId && !isNaN(brevoListId)) {
-            contactData.listIds = [parseInt(brevoListId)];
+    // Add Brevo integration if configured
+    if (brevoClient) {
+      integrationPromises.push(
+        (async () => {
+          try {
+            const contactData = {
+              email: validatedData.email,
+              attributes: {
+                FIRSTNAME: validatedData.firstName
+              },
+              updateEnabled: true
+            };
+
+            if (brevoListId && !isNaN(brevoListId)) {
+              contactData.listIds = [parseInt(brevoListId)];
+            }
+
+            return await brevoClient.createContact(contactData);
+          } catch (error) {
+            console.error('Brevo API error:', error);
+            // Don't throw, just log the error
+            return null;
           }
+        })()
+      );
+    }
 
-          return await brevoClient.createContact(contactData);
-        } catch (error) {
-          console.error('Brevo API error:', error);
-          throw error;
-        }
-      })() : Promise.resolve(null),
-
-      // ClickUp integration
-      clickupClient ? (async () => {
-        try {
-          const taskName = `Contact: ${validatedData.firstName} (${validatedData.email}) - ${new Date().toISOString().split('T')[0]}`;
-          const taskDescription = `
+    // Add ClickUp integration if configured
+    if (clickupClient) {
+      integrationPromises.push(
+        (async () => {
+          try {
+            const taskName = `Contact: ${validatedData.firstName} (${validatedData.email}) - ${new Date().toISOString().split('T')[0]}`;
+            const taskDescription = `
 Contact Information:
 Name: ${validatedData.firstName}
 Email: ${validatedData.email}
@@ -159,25 +167,29 @@ Consent: ${validatedData.consent ? 'Yes' : 'No'}
 
 Question:
 ${validatedData.question}
-          `.trim();
+            `.trim();
 
-          return await clickupClient.post(`/list/${clickupListId}/task`, {
-            name: taskName,
-            description: taskDescription
-          });
-        } catch (error) {
-          console.error('ClickUp API error:', error);
-          throw error;
-        }
-      })() : Promise.resolve(null)
-    ]);
-
-    // Log integration results
-    if (brevoResult.status === 'rejected') {
-      console.error('Brevo integration failed:', brevoResult.reason);
+            return await clickupClient.post(`/list/${clickupListId}/task`, {
+              name: taskName,
+              description: taskDescription
+            });
+          } catch (error) {
+            console.error('ClickUp API error:', error);
+            // Don't throw, just log the error
+            return null;
+          }
+        })()
+      );
     }
-    if (clickupResult.status === 'rejected') {
-      console.error('ClickUp integration failed:', clickupResult.reason);
+
+    // Execute all integrations in parallel
+    if (integrationPromises.length > 0) {
+      const results = await Promise.allSettled(integrationPromises);
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          console.error(`Integration ${index} failed:`, result.reason);
+        }
+      });
     }
 
     // Return success response

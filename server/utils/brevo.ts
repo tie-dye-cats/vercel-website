@@ -33,7 +33,15 @@ export async function createContactWithParams(params: CreateContactParams): Prom
   }
 
   try {
-    const response = await createContact(params.email, params.attributes || {});
+    const contactData = {
+      email: params.email,
+      attributes: {
+        ...params.attributes,
+        FIRSTNAME: params.firstName || params.email.split('@')[0] // Use the part before @ if firstName not provided
+      },
+      listIds: [2] // WEBSITE_LEADS list ID
+    };
+    const response = await createContact(params.email, contactData);
     return response;
   } catch (error: any) {
     if (error.message?.includes('already exists')) {
@@ -45,12 +53,14 @@ export async function createContactWithParams(params: CreateContactParams): Prom
         }
 
         const updatedAttributes = {
-          ...(existingContact.body.attributes || {}),
-          ...params.attributes
+          ...existingContact.body.attributes || {},
+          ...params.attributes,
+          FIRSTNAME: params.firstName || params.email.split('@')[0] // Use the part before @ if firstName not provided
         };
 
         await contactsApi.updateContact(params.email, {
-          attributes: updatedAttributes
+          attributes: updatedAttributes,
+          listIds: [2] // WEBSITE_LEADS list ID
         });
 
         const result = { id: existingContact.body.id };

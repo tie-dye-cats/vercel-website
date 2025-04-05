@@ -76,15 +76,22 @@ export const sendEmail = async (
 // Create contact function
 export const createContact = async (
   email: string,
-  attributes: Record<string, any> = {}
+  data: {
+    attributes?: Record<string, any>;
+    listIds?: number[];
+  } = {}
 ): Promise<ContactResponse> => {
   try {
-    const contactData = {
-      email: cleanEmail(email),
-      attributes
-    };
+    const createContact = new CreateContact();
+    createContact.email = cleanEmail(email);
+    if (data.attributes) {
+      createContact.attributes = data.attributes;
+    }
+    if (data.listIds) {
+      createContact.listIds = data.listIds;
+    }
 
-    const response = await contactsApi.createContact(contactData);
+    const response = await contactsApi.createContact(createContact);
     if (!response || !response.body) {
       throw new Error('Invalid response from Brevo API');
     }
@@ -124,10 +131,21 @@ export const getContactInfo = async (email: string): Promise<ContactInfoResponse
 // Update contact function
 export const updateContact = async (
   email: string,
-  attributes: Record<string, any>
+  data: {
+    attributes?: Record<string, any>;
+    listIds?: number[];
+  }
 ): Promise<void> => {
   try {
-    const response = await contactsApi.updateContact(cleanEmail(email), { attributes });
+    const updateData: any = {};
+    if (data.attributes) {
+      updateData.attributes = data.attributes;
+    }
+    if (data.listIds) {
+      updateData.listIds = data.listIds;
+    }
+
+    const response = await contactsApi.updateContact(cleanEmail(email), updateData);
     if (!response || !response.body) {
       throw new Error('Invalid response from Brevo API');
     }

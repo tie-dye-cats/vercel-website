@@ -1,9 +1,9 @@
 import type { BrevoError, CreateContactParams, SendEmailParams } from '../types/brevo';
-import { createContact, sendEmail, contactsApi } from './brevoClient';
+import { createDoiContact, sendEmail, contactsApi } from './brevoClient';
 import type { EmailResponse, ContactResponse } from './brevoClient';
 import { GetExtendedContactDetails } from '@getbrevo/brevo/dist/model/models';
 
-export { createContact, sendEmail };
+export { createDoiContact as createContact, sendEmail };
 
 export const CONTACT_LISTS = {
   WEBSITE_LEADS: 2
@@ -37,14 +37,17 @@ export async function createContactWithParams(params: CreateContactParams): Prom
       email: params.email,
       attributes: {
         ...params.attributes,
-        FIRSTNAME: params.firstName || params.email.split('@')[0] // Use the part before @ if firstName not provided
+        FIRSTNAME: params.firstName || params.email.split('@')[0]
       },
-      listIds: [2] // WEBSITE_LEADS list ID
+      listIds: [2], // WEBSITE_LEADS list ID
+      templateId: 1,
+      redirectionUrl: "https://physiqfitness.com"
     };
-    const response = await createContact(params.email, contactData);
-    return response;
+    await createDoiContact(params.email, contactData);
+    // DOI contact creation doesn't return an ID immediately
+    return { id: 0 };
   } catch (error: any) {
-    if (error.message?.includes('already exists')) {
+    if (error.body?.code === 'duplicate_parameter' || error.message?.includes('already associated')) {
       try {
         const existingContact = await contactsApi.getContactInfo(params.email);
         
@@ -55,12 +58,12 @@ export async function createContactWithParams(params: CreateContactParams): Prom
         const updatedAttributes = {
           ...existingContact.body.attributes || {},
           ...params.attributes,
-          FIRSTNAME: params.firstName || params.email.split('@')[0] // Use the part before @ if firstName not provided
+          FIRSTNAME: params.firstName || params.email.split('@')[0]
         };
 
         await contactsApi.updateContact(params.email, {
           attributes: updatedAttributes,
-          listIds: [2] // WEBSITE_LEADS list ID
+          listIds: [2]
         });
 
         const result = { id: existingContact.body.id };
@@ -70,6 +73,7 @@ export async function createContactWithParams(params: CreateContactParams): Prom
         throw new Error(updateError.message || 'Failed to update existing contact');
       }
     }
+    console.error('Brevo API error:', error);
     throw new Error(error.message || 'Failed to create contact');
   }
 } 

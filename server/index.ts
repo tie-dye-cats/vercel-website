@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express from "express";
+import cors from 'cors';
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { createServer } from "http";
@@ -14,7 +15,8 @@ const app = express();
 // Create HTTP server
 const server = createServer(app);
 
-// Basic middleware
+// Middleware
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -30,8 +32,9 @@ app.use((req, res, next) => {
 
 // Check required environment variables
 const requiredEnvVars = {
-  SLACK_BOT_TOKEN: "Slack notifications",
   BREVO_API_KEY: "Email notifications",
+  CLICKUP_API_TOKEN: "ClickUp task creation",
+  CLICKUP_LIST_ID: "ClickUp list assignment"
 };
 
 Object.entries(requiredEnvVars).forEach(([key, feature]) => {
@@ -88,27 +91,27 @@ if (process.env.NODE_ENV === "development") {
   serveStatic(app);
 }
 
-// Start server (use port 3000 for local, process.env.PORT for Vercel/Replit)
+// Start server
 const port = parseInt(process.env.PORT || '3000', 10);
 const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
 
-const startServer = (port: number) => {
-  server.listen(port, host, () => {
-    log(`Server running at http://${host}:${port}`);
-  }).on('error', (err: any) => {
+function startServer(port: number): void {
+  try {
+    app.listen(port, () => {
+      console.log(`[express] Server running at http://localhost:${port}`);
+    });
+  } catch (error: unknown) {
+    const err = error as { code?: string, message?: string };
     if (err.code === 'EADDRINUSE') {
-      log(`Port ${port} is already in use. Trying port ${port + 1}...`);
-      startServer(port + 1);
-    } else if (err.code === 'ENOTSUP') {
-      log(`Port ${port} is not supported. Trying port ${port + 1}...`);
+      console.log(`[express] Port ${port} is already in use. Trying port ${port + 1}...`);
       startServer(port + 1);
     } else {
-      log(`Server error: ${err.message}`);
+      console.error('[express] Failed to start server:', err.message || 'Unknown error');
       process.exit(1);
     }
-  });
-};
+  }
+}
 
-startServer(port);
+startServer(Number(port));
 
 export default app;

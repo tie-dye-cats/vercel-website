@@ -53,6 +53,7 @@ export interface CreateContactParams {
   email: string;
   firstName?: string;
   lastName?: string;
+  SMS?: string;
   attributes?: Record<string, any>;
   listIds?: number[];
 }

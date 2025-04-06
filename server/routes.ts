@@ -1,7 +1,9 @@
 import type { Express } from "express";
-import { sendLeadNotification } from "./utils/slack";
 import { sendEmailWithParams, createContactWithParams } from "./utils/brevo";
 import { storage } from "./storage";
+import { createTaskFromForm } from "./utils/clickup";
+import { v4 as uuidv4 } from "uuid";
+import { formatPhoneNumber } from "./utils/phone";
 
 export function registerRoutes(app: Express) {
   // Test endpoint for database connection
@@ -16,32 +18,6 @@ export function registerRoutes(app: Express) {
       console.error("Error creating test user:", error);
       res.status(500).json({ 
         success: false, 
-        error: error.message 
-      });
-    }
-  });
-
-  // Test endpoint for Slack notifications
-  app.post("/api/test-slack", async (req, res) => {
-    try {
-      await sendLeadNotification({
-        firstName: "Test User",
-        email: "test@example.com",
-        phone: "123-456-7890",
-        question: "This is a test notification",
-        marketingConsent: true,
-        communicationConsent: true
-      });
-      
-      return res.json({ 
-        success: true,
-        message: "Test Slack notification sent successfully"
-      });
-    } catch (error: any) {
-      console.error("Slack test error:", error);
-      return res.status(500).json({ 
-        success: false, 
-        message: "Error sending test notification",
         error: error.message 
       });
     }
@@ -86,187 +62,133 @@ export function registerRoutes(app: Express) {
     }
   });
 
-  // Lead form submission endpoint
-  app.post("/api/leads", async (req, res) => {
+  // Test endpoint for ClickUp integration
+  app.post("/api/test-clickup", async (req, res) => {
     try {
-      const { firstName, lastName, email, phone, company, question, marketingConsent, communicationConsent } = req.body;
+      // Generate UUID for this submission
+      const submissionId = uuidv4();
+      console.log('Generated submission ID:', submissionId);
 
-      if (!firstName || !email || !phone) {
-        return res.status(400).json({
-          success: false,
-          message: "Missing required fields: firstName, email, and phone are required"
-        });
-      }
-      
-      // Create or update contact in Brevo
-      await createContactWithParams({
-        email,
-        firstName,
-        attributes: {
-          LASTNAME: lastName || '',
-          COMPANY: company || '',
-          PHONE: phone,
-          QUESTION: question || '',
-          SOURCE: 'Website Lead Form',
-          SIGNUP_DATE: new Date().toISOString(),
-          MARKETING_CONSENT: marketingConsent || false,
-          COMMUNICATION_CONSENT: communicationConsent || false
+      console.log('ClickUp Test Request:', {
+        body: req.body,
+        env: {
+          hasClickUpToken: !!process.env.CLICKUP_API_TOKEN,
+          hasClickUpListId: !!process.env.CLICKUP_LIST_ID
         }
       });
 
-      // Send notification to Slack
-      await sendLeadNotification({
-        firstName,
-        email,
-        phone,
-        question: question || `Company: ${company || 'Not provided'}`,
-        marketingConsent: marketingConsent || false,
-        communicationConsent: communicationConsent || false
+      const task = await createTaskFromForm({
+        firstName: req.body.firstName || "Test User",
+        email: req.body.email || "test@example.com",
+        phone: req.body.phone || "1234567890",
+        question: req.body.question || "Testing ClickUp integration",
+        marketingConsent: req.body.marketingConsent === true,
+        communicationConsent: req.body.communicationConsent === true,
+        company: req.body.company
       });
 
-      // Send confirmation email only if they consented to communication
-      if (communicationConsent) {
-        await sendEmailWithParams({
-          subject: 'Thank you for your interest in AdVelocity',
-          htmlContent: `
-            <h2>Thank you for reaching out!</h2>
-            <p>Hi ${firstName},</p>
-            <p>We have received your information and one of our experts will be in touch with you shortly.</p>
-            ${question ? `<p>Your message:</p><blockquote>${question}</blockquote>` : ''}
-            <p>Best regards,<br>The AdVelocity Team</p>
-          `,
-          to: [{ email, name: firstName }]
-        });
-      }
-      
-      return res.json({ 
+      return res.json({
         success: true,
-        message: "Lead form submission successful"
+        message: "Test ClickUp task created successfully",
+        task
       });
     } catch (error: any) {
-      console.error("Lead form submission error:", error);
-      return res.status(500).json({ 
-        success: false, 
-        message: "Error submitting lead form",
-        error: error.message 
+      console.error("ClickUp test error:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Error creating test task",
+        error: error.message,
+        type: error.type,
+        details: error.details
       });
     }
   });
 
-  // Contact form submission endpoint
-  app.post("/api/form", async (req, res) => {
-    console.log('Form submission received:', {
-      body: req.body,
-      headers: req.headers,
-      method: req.method
-    });
-
+  // Lead form submission endpoint
+  app.post("/api/leads", async (req, res) => {
     try {
-      const { name, email, message, marketingConsent, communicationConsent } = req.body;
-      console.log('Parsed form data:', { name, email, message, marketingConsent, communicationConsent });
+      const { firstName, email, phone, question, marketingConsent, communicationConsent, company } = req.body;
 
-      if (!name || !email || !message) {
-        console.log('Validation failed:', { name, email, message });
+      if (!firstName || !email || !phone) {
         return res.status(400).json({
           success: false,
-          message: "Missing required fields: name, email, and message are required"
+          message: 'Missing required fields',
+          error: 'firstName, email, and phone are required'
         });
-      }
-      
-      try {
-        console.log('Creating/updating contact in Brevo...');
-        // Create or update contact in Brevo
-        await createContactWithParams({
-          email,
-          firstName: name,
-          attributes: {
-            LAST_MESSAGE: message,
-            SOURCE: 'Website Form',
-            SIGNUP_DATE: new Date().toISOString(),
-            MARKETING_CONSENT: marketingConsent || false,
-            COMMUNICATION_CONSENT: communicationConsent || false
-          }
-        });
-        console.log('Contact created/updated successfully');
-      } catch (error: any) {
-        console.error("Error creating/updating contact:", {
-          error: error.message,
-          stack: error.stack,
-          details: error.response?.body || error.message
-        });
-        // Continue with the form submission even if Brevo fails
       }
 
-      try {
-        console.log('Sending Slack notification...');
-        // Send notification to Slack
-        await sendLeadNotification({
-          firstName: name,
-          email,
-          question: message,
-          marketingConsent: marketingConsent || false,
-          communicationConsent: communicationConsent || false
-        });
-        console.log('Slack notification sent successfully');
-      } catch (error: any) {
-        console.error("Error sending Slack notification:", {
-          error: error.message,
-          stack: error.stack,
-          details: error.response?.body || error.message
-        });
-        // Continue with the form submission even if Slack fails
-      }
-
-      try {
-        // Send confirmation email only if they consented to communication
-        if (communicationConsent) {
-          console.log('Sending confirmation email...');
-          await sendEmailWithParams({
-            subject: 'Thank you for contacting AdVelocity',
-            htmlContent: `
-              <h2>Thank you for reaching out!</h2>
-              <p>Hi ${name},</p>
-              <p>We have received your message and will get back to you shortly.</p>
-              <p>Your message:</p>
-              <blockquote>${message}</blockquote>
-              <p>Best regards,<br>The AdVelocity Team</p>
-            `,
-            to: [{ email, name }]
-          });
-          console.log('Confirmation email sent successfully');
-        } else {
-          console.log('Skipping confirmation email - no communication consent');
-        }
-      } catch (error: any) {
-        console.error("Error sending confirmation email:", {
-          error: error.message,
-          stack: error.stack,
-          details: error.response?.body || error.message
-        });
-        // Continue with the form submission even if email fails
-      }
-      
-      console.log('Form submission completed successfully');
-      const response = { 
-        success: true,
-        message: "Form submission successful"
-      };
-      console.log('Sending response:', response);
-      return res.json(response);
-    } catch (error: any) {
-      console.error("Form submission error:", {
-        error: error.message,
-        stack: error.stack,
-        details: error.response?.body || error.message,
-        body: req.body
+      console.log('Processing lead submission:', {
+        firstName,
+        email,
+        phone,
+        company
       });
-      const errorResponse = {
-        success: false,
-        message: error.message || "Error submitting form",
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+
+      // Format and validate phone number
+      let formattedPhone;
+      try {
+        formattedPhone = formatPhoneNumber(phone);
+        console.log('Formatted phone number:', formattedPhone);
+      } catch (error: any) {
+        console.error('Phone formatting error:', error);
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid phone number format',
+          error: error.message || 'Invalid phone number format'
+        });
+      }
+
+      // Create contact in Brevo
+      const contactData = {
+        firstName,
+        email,
+        attributes: {
+          LASTNAME: '',
+          COMPANY: company || '',
+          QUESTION: question || '',
+          SOURCE: 'Website Lead Form',
+          SIGNUP_DATE: new Date().toISOString(),
+          MARKETING_CONSENT: marketingConsent,
+          COMMUNICATION_CONSENT: communicationConsent,
+          EXT_ID: uuidv4(),
+          OPT_IN: marketingConsent ? 1 : 0,
+          SMS: formattedPhone
+        }
       };
-      console.log('Sending error response:', errorResponse);
-      return res.status(500).json(errorResponse);
+
+      console.log('Sending contact data to Brevo:', contactData);
+      await createContactWithParams(contactData);
+
+      // Create task in ClickUp
+      const task = await createTaskFromForm({
+        firstName,
+        email,
+        phone,
+        question,
+        marketingConsent,
+        communicationConsent,
+        company
+      });
+
+      return res.json({
+        success: true,
+        message: 'Lead form submission successful',
+        task
+      });
+
+    } catch (error: any) {
+      console.error('Lead form submission error:', error);
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        response: error.response
+      });
+      return res.status(500).json({
+        success: false,
+        message: 'Error submitting lead form',
+        error: error.message || 'An unexpected error occurred'
+      });
     }
   });
 }

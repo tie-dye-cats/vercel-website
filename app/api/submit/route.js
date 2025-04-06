@@ -3,6 +3,8 @@ import { ContactsApi } from '@getbrevo/brevo';
 import axios from 'axios';
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
+import { createTaskFromForm } from '../../../server/utils/clickup';
+import { v4 as uuidv4 } from 'uuid';
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -75,10 +77,10 @@ try {
 const submissionSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters').trim(),
   email: z.string().email('Invalid email address').trim(),
+  phone: z.string().min(10, 'Phone number must be at least 10 characters').trim(),
   question: z.string().min(5, 'Question must be at least 5 characters').trim(),
-  consent: z.boolean().refine(val => val === true, {
-    message: 'You must agree to receive communications'
-  })
+  marketingConsent: z.boolean().optional(),
+  communicationConsent: z.boolean().optional()
 });
 
 // CORS handler
@@ -96,6 +98,10 @@ export async function OPTIONS(request) {
 export async function POST(request) {
   console.log('Received form submission request');
   try {
+    // Generate UUID for this submission
+    const submissionId = uuidv4();
+    console.log('Generated submission ID:', submissionId);
+
     // Validate request body
     let data;
     try {
@@ -154,10 +160,13 @@ export async function POST(request) {
       .from('contact_submissions')
       .insert([
         {
+          id: submissionId,
           first_name: validatedData.firstName,
           email: validatedData.email,
+          phone: validatedData.phone,
           question: validatedData.question,
-          consent: validatedData.consent,
+          marketing_consent: validatedData.marketingConsent,
+          communication_consent: validatedData.communicationConsent,
           created_at: new Date().toISOString()
         }
       ])
@@ -179,7 +188,7 @@ export async function POST(request) {
 
     console.log('Supabase insert successful:', supabaseData);
 
-    // Execute Brevo and ClickUp integrations in parallel
+    // Execute integrations in parallel
     const integrationPromises = [];
     const integrationResults = {
       brevo: null,
@@ -222,28 +231,22 @@ export async function POST(request) {
     }
 
     // Add ClickUp integration if configured
-    if (clickupClient) {
+    if (process.env.CLICKUP_API_TOKEN && process.env.CLICKUP_LIST_ID) {
       console.log('Attempting ClickUp integration...');
       integrationPromises.push(
         (async () => {
           try {
-            const taskName = `Contact: ${validatedData.firstName} (${validatedData.email}) - ${new Date().toISOString().split('T')[0]}`;
-            const taskDescription = `
-Contact Information:
-Name: ${validatedData.firstName}
-Email: ${validatedData.email}
-Consent: ${validatedData.consent ? 'Yes' : 'No'}
-
-Question:
-${validatedData.question}
-            `.trim();
-
-            const result = await clickupClient.post(`/list/${process.env.CLICKUP_LIST_ID}/task`, {
-              name: taskName,
-              description: taskDescription
+            const result = await createTaskFromForm({
+              submissionId,
+              firstName: validatedData.firstName,
+              email: validatedData.email,
+              phone: validatedData.phone,
+              question: validatedData.question,
+              marketingConsent: validatedData.marketingConsent,
+              communicationConsent: validatedData.communicationConsent
             });
             console.log('ClickUp integration successful');
-            integrationResults.clickup = { success: true };
+            integrationResults.clickup = { success: true, taskId: result.id };
             return result;
           } catch (error) {
             console.error('ClickUp API error:', error);
@@ -272,6 +275,7 @@ ${validatedData.question}
     return NextResponse.json({
       success: true,
       message: 'Form submitted successfully',
+      submissionId,
       supabaseId: supabaseData.id,
       integrations: integrationResults
     });

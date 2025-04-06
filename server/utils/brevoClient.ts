@@ -11,8 +11,9 @@
  */
 
 import { TransactionalEmailsApi, ContactsApi } from '@getbrevo/brevo/dist/api/apis';
-import { SendSmtpEmail, CreateContact, GetExtendedContactDetails } from '@getbrevo/brevo/dist/model/models';
+import { SendSmtpEmail, CreateContact, CreateDoiContact, GetExtendedContactDetails } from '@getbrevo/brevo/dist/model/models';
 import { TransactionalEmailsApiApiKeys, ContactsApiApiKeys } from '@getbrevo/brevo/dist/api/apis';
+import request from 'request-promise';
 
 // Initialize API instances with configuration
 const apiKey = process.env.BREVO_API_KEY || '';
@@ -22,6 +23,14 @@ transactionalEmailsApi.setApiKey(TransactionalEmailsApiApiKeys.apiKey, apiKey);
 
 const contactsApi = new ContactsApi();
 contactsApi.setApiKey(ContactsApiApiKeys.apiKey, apiKey);
+
+const BREVO_API_BASE = 'https://api.brevo.com/v3';
+
+interface CreateContactParams {
+  email: string;
+  firstName: string;
+  attributes: Record<string, any>;
+}
 
 // Interface definitions
 export interface EmailResponse {
@@ -73,31 +82,79 @@ export const sendEmail = async (
   }
 };
 
-// Create contact function
+// Create contact with double opt-in function
+export const createDoiContact = async (
+  email: string,
+  data: {
+    attributes?: Record<string, any>;
+    listIds?: number[];
+    templateId?: number;
+    redirectionUrl?: string;
+  } = {}
+): Promise<void> => {
+  try {
+    const doiContact = new CreateDoiContact();
+    doiContact.email = cleanEmail(email);
+    if (data.attributes) {
+      doiContact.attributes = data.attributes;
+    }
+    if (data.listIds) {
+      doiContact.includeListIds = data.listIds;
+    }
+    if (data.templateId) {
+      doiContact.templateId = data.templateId;
+    }
+    if (data.redirectionUrl) {
+      doiContact.redirectionUrl = data.redirectionUrl;
+    }
+
+    await contactsApi.createDoiContact(doiContact);
+  } catch (error: any) {
+    console.error('Error creating DOI contact:', error);
+    throw new Error(error.message || 'Failed to create DOI contact');
+  }
+};
+
+// Create contact function (keeping for backward compatibility)
 export const createContact = async (
   email: string,
   data: {
     attributes?: Record<string, any>;
     listIds?: number[];
-  } = {}
+  }
 ): Promise<ContactResponse> => {
   try {
-    const createContact = new CreateContact();
-    createContact.email = cleanEmail(email);
-    if (data.attributes) {
-      createContact.attributes = data.attributes;
-    }
-    if (data.listIds) {
-      createContact.listIds = data.listIds;
-    }
+    const contact = new CreateDoiContact();
+    contact.email = cleanEmail(email);
+    contact.attributes = data.attributes || {};
+    contact.includeListIds = data.listIds || [];
+    contact.templateId = 1;
+    contact.redirectionUrl = "https://physiqfitness.com";
 
-    const response = await contactsApi.createContact(createContact);
-    if (!response || !response.body) {
+    console.log('Creating DOI contact with data:', JSON.stringify(contact, null, 2));
+    const response = await contactsApi.createDoiContact(contact);
+    
+    if (!response || !response.body || !response.body.message) {
       throw new Error('Invalid response from Brevo API');
     }
-    return { id: response.body.id || 0 };
+    
+    // DOI contact creation returns a message instead of an ID
+    return { id: 0 }; // Temporary ID since DOI is pending
   } catch (error: any) {
-    console.error('Error creating contact:', error);
+    console.error('Brevo API error:', {
+      message: error.message,
+      response: error.response?.body,
+      statusCode: error.response?.statusCode
+    });
+    
+    // Handle specific error cases
+    if (error.response?.body?.code === 'duplicate_parameter') {
+      throw new Error('Contact already exists');
+    } else if (error.response?.body?.message?.includes('Invalid phone number')) {
+      console.error('Phone number error details:', error.response?.body);
+      throw new Error('Invalid phone number format. Please ensure the number is in the correct format.');
+    }
+    
     throw new Error(error.message || 'Failed to create contact');
   }
 };
@@ -182,4 +239,35 @@ export const sendEmailWithTemplate = async (
 };
 
 // Export the API instances for use in other parts of the application
-export { transactionalEmailsApi, contactsApi }; 
+export { transactionalEmailsApi, contactsApi };
+
+export async function createContactWithParams(params: CreateContactParams): Promise<any> {
+  try {
+    const response = await request({
+      method: 'POST',
+      url: `${BREVO_API_BASE}/contacts`,
+      headers: {
+        'Accept': 'application/json',
+        'api-key': process.env.BREVO_API_KEY as string
+      },
+      json: true,
+      body: {
+        email: params.email,
+        attributes: {
+          ...params.attributes,
+          FIRSTNAME: params.firstName
+        },
+        listIds: [2],
+        updateEnabled: false
+      }
+    });
+    return response;
+  } catch (error: any) {
+    console.error('Brevo API Error:', {
+      statusCode: error.statusCode,
+      message: error.message,
+      response: error.response?.body
+    });
+    throw new Error(error.response?.body?.message || error.message || 'HTTP request failed');
+  }
+} 

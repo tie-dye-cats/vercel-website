@@ -6,6 +6,18 @@ import { v4 as uuidv4 } from "uuid";
 import { formatPhoneNumber } from "./utils/phone";
 
 export function registerRoutes(app: Express) {
+  // Health check endpoint
+  app.get("/api/health", (req, res) => {
+    res.json({ 
+      status: "ok", 
+      timestamp: new Date().toISOString(),
+      services: {
+        brevo: !!process.env.BREVO_API_KEY,
+        clickup: !!process.env.CLICKUP_API_TOKEN
+      }
+    });
+  });
+
   // Test endpoint for database connection
   app.post("/api/test/create-user", async (req, res) => {
     try {
@@ -121,7 +133,7 @@ export function registerRoutes(app: Express) {
         firstName,
         email,
         phone,
-        company
+        company: company || 'Not provided'
       });
 
       // Format and validate phone number
@@ -129,6 +141,11 @@ export function registerRoutes(app: Express) {
       try {
         formattedPhone = formatPhoneNumber(phone);
         console.log('Formatted phone number:', formattedPhone);
+        
+        // Double-check that phone number is valid
+        if (!formattedPhone || formattedPhone.length < 10) {
+          throw new Error('Phone number appears to be truncated or invalid');
+        }
       } catch (error: any) {
         console.error('Phone formatting error:', error);
         return res.status(400).json({
@@ -138,43 +155,90 @@ export function registerRoutes(app: Express) {
         });
       }
 
+      // Generate a unique external ID for tracking
+      const externalId = uuidv4();
+      console.log('Generated external ID:', externalId);
+
       // Create contact in Brevo
       const contactData = {
         firstName,
         email,
         attributes: {
           LASTNAME: '',
-          COMPANY: company || '',
+          COMPANY: company || 'Not provided',
           QUESTION: question || '',
           SOURCE: 'Website Lead Form',
           SIGNUP_DATE: new Date().toISOString(),
-          MARKETING_CONSENT: marketingConsent,
-          COMMUNICATION_CONSENT: communicationConsent,
-          EXT_ID: uuidv4(),
-          OPT_IN: marketingConsent ? 1 : 0,
+          MARKETING_CONSENT: marketingConsent || false,
+          COMMUNICATION_CONSENT: communicationConsent || false,
+          EXT_ID: externalId,
+          OPT_IN: (marketingConsent || false) ? 1 : 0,
           SMS: formattedPhone
         }
       };
 
       console.log('Sending contact data to Brevo:', contactData);
-      await createContactWithParams(contactData);
+      
+      try {
+        await createContactWithParams(contactData);
+        console.log('Successfully created/updated Brevo contact for:', email);
+      } catch (brevoError: any) {
+        console.error('Brevo API error:', {
+          message: brevoError.message,
+          stack: brevoError.stack,
+          response: brevoError.response
+        });
+        
+        // Return a user-friendly error based on the type of failure
+        if (brevoError.message?.includes('phone')) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid phone number format',
+            error: 'Please enter a valid phone number with area code'
+          });
+        }
+        
+        if (brevoError.message?.includes('email')) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid email address',
+            error: 'Please enter a valid email address'
+          });
+        }
+        
+        // Continue with ClickUp task creation even if Brevo fails
+        console.log('Continuing with ClickUp task creation despite Brevo failure');
+      }
 
       // Create task in ClickUp
-      const task = await createTaskFromForm({
-        firstName,
-        email,
-        phone,
-        question,
-        marketingConsent,
-        communicationConsent,
-        company
-      });
-
-      return res.json({
-        success: true,
-        message: 'Lead form submission successful',
-        task
-      });
+      console.log('Attempting to create ClickUp task for:', email);
+      try {
+        const task = await createTaskFromForm({
+          firstName,
+          email,
+          phone,
+          question,
+          marketingConsent: marketingConsent || false,
+          communicationConsent: communicationConsent || false,
+          company: company || 'Not provided'
+        });
+        console.log('Successfully created ClickUp task for:', email);
+        
+        return res.json({
+          success: true,
+          message: 'Lead form submission successful',
+          task
+        });
+      } catch (clickUpError: any) {
+        console.error('ClickUp task creation error:', clickUpError);
+        
+        // Since we already attempted Brevo, return partial success
+        return res.status(207).json({
+          success: true,
+          message: 'Lead information saved, but task creation failed',
+          error: 'Your information was received, but there was an issue creating a follow-up task'
+        });
+      }
 
     } catch (error: any) {
       console.error('Lead form submission error:', error);

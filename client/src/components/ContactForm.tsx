@@ -19,10 +19,11 @@ import { useToast } from "@/hooks/use-toast"
 const formSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
+  phone: z.string().min(10, 'Phone number must be at least 10 digits'),
+  company: z.string().optional(),
   question: z.string().min(5, 'Question must be at least 5 characters'),
-  consent: z.boolean().refine((val) => val === true, {
-    message: 'You must agree to receive communications',
-  }),
+  communicationConsent: z.boolean().default(false),
+  marketingConsent: z.boolean().default(false),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -36,8 +37,11 @@ export function ContactForm() {
     defaultValues: {
       firstName: '',
       email: '',
+      phone: '',
+      company: '',
       question: '',
-      consent: false,
+      communicationConsent: false,
+      marketingConsent: false,
     },
   });
 
@@ -53,7 +57,7 @@ export function ContactForm() {
   const onSubmit = async (values: FormData) => {
     setLoading(true);
     try {
-      const response = await fetch('/api/submit', {
+      const response = await fetch('/api/leads', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -113,6 +117,32 @@ export function ContactForm() {
         />
         <FormField
           control={form.control}
+          name="phone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Phone Number *</FormLabel>
+              <FormControl>
+                <Input type="tel" placeholder="1234567890" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="company"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Company</FormLabel>
+              <FormControl>
+                <Input placeholder="Your company (optional)" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
           name="question"
           render={({ field }) => (
             <FormItem>
@@ -130,7 +160,7 @@ export function ContactForm() {
         />
         <FormField
           control={form.control}
-          name="consent"
+          name="communicationConsent"
           render={({ field }) => (
             <FormItem className="flex flex-row items-start space-x-3 space-y-0">
               <FormControl>
@@ -142,6 +172,25 @@ export function ContactForm() {
               <div className="space-y-1 leading-none">
                 <FormLabel>
                   I agree to receive communications about my inquiry
+                </FormLabel>
+              </div>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="marketingConsent"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <div className="space-y-1 leading-none">
+                <FormLabel>
+                  I'd like to receive marketing communications about products and services
                 </FormLabel>
               </div>
             </FormItem>

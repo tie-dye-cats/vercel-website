@@ -4,7 +4,7 @@ export interface Contact {
   email: string;
   firstName?: string;
   lastName?: string;
-  attributes?: Record<string, any>;
+  attributes?: Record<string, any>; // allows SMS and others
 }
 
 export interface EmailParams {
@@ -54,7 +54,7 @@ export interface CreateContactParams {
   firstName?: string;
   lastName?: string;
   SMS?: string;
-  attributes?: Record<string, any>;
+  attributes?: Record<string, any>; // allows any dynamic keys
   listIds?: number[];
 }
 
@@ -67,6 +67,7 @@ export interface SendEmailParams {
   tags?: string[];
 }
 
+// Augmenting Brevo's module definitions
 declare module '@getbrevo/brevo' {
   export interface BrevoContactResponse {
     id: string;
@@ -75,7 +76,7 @@ declare module '@getbrevo/brevo' {
     attributes: {
       FIRSTNAME?: string;
       LASTNAME?: string;
-      [key: string]: any;
+      [key: string]: any; // supports SMS and others
     };
   }
 
@@ -98,6 +99,7 @@ declare module '@getbrevo/brevo' {
     message?: string;
   }
 
+  // This version shouldn't conflict if you're importing CreateContactParams from your main app types
   export interface CreateContactParams {
     email: string;
     attributes?: Record<string, any>;
@@ -116,4 +118,4 @@ declare module '@getbrevo/brevo' {
       email: string;
     };
   }
-} 
+}

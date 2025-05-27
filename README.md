@@ -8,16 +8,18 @@ Modern, professional agency website built with Next.js 14+, TypeScript, Tailwind
 
 - **Next.js 14+ Foundation** - App Router, TypeScript, clean project structure
 - **Tailwind CSS** - Dark mode by default, custom CSS variables, responsive design
-- **Supabase Integration** - Database client, API routes, schema ready
+- **Supabase Integration** - Database client, API routes, schema deployed
+- **Brevo Email Marketing** - Automated lead nurturing with phone number integration
+- **Lead Capture System** - Multi-step forms with validation and dual storage (Supabase + Brevo)
 - **Environment Configuration** - Secure environment variable handling
-- **API Endpoints** - Lead submission and testing endpoints
+- **API Endpoints** - Lead submission with Supabase + Brevo integration
 
 ### ⏳ In Progress
 
-- Database schema deployment
-- shadcn/ui component library
-- Lead capture forms with validation
 - Analytics integration (GTM, GA4, Meta Pixel)
+- Blog system with CMS
+- Admin dashboard
+- Additional email templates
 
 ## 🛠️ Tech Stack
 
@@ -53,6 +55,7 @@ Modern, professional agency website built with Next.js 14+, TypeScript, Tailwind
 ## 📋 Setup Guides
 
 - **[Supabase Setup](./SUPABASE_SETUP.md)** - Complete database setup guide
+- **[Brevo Integration](./BREVO_SETUP.md)** - Email marketing setup guide
 - **Environment Variables** - See `.env.example` for required variables
 
 ## 🎯 Planned Features
@@ -65,7 +68,7 @@ Modern, professional agency website built with Next.js 14+, TypeScript, Tailwind
 - [ ] Admin dashboard for content management
 
 ### Integrations
-- [ ] Brevo email marketing
+- [x] Brevo email marketing (with E.164 phone number formatting)
 - [ ] ClickUp task management
 - [ ] Google Tag Manager (GTM)
 - [ ] Google Analytics (GA4)

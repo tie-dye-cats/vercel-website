@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
+import { BrevoService } from '../../../lib/brevo.service'
 
 // Validation schema matching actual database schema
 const leadSchema = z.object({
@@ -12,6 +13,41 @@ const leadSchema = z.object({
   message: z.string().optional(),
   source: z.string().optional(),
 })
+
+// Function to send lead to Brevo using the service class
+async function sendToBrevo(leadData: any) {
+  try {
+    const apiKey = process.env.BREVO_API_KEY
+    if (!apiKey) {
+      console.warn('Brevo API key not configured, skipping Brevo integration')
+      return { success: false, error: 'API key not configured' }
+    }
+
+    const listId = parseInt(process.env.BREVO_LIST_ID || '1')
+    const brevoService = new BrevoService(apiKey, listId)
+
+    // Create contact in Brevo
+    const result = await brevoService.createContact({
+      email: leadData.email,
+      firstName: leadData.first_name,
+      lastName: leadData.name || '',
+      SMS: leadData.phone || '',
+      attributes: {
+        QUESTION: leadData.question,
+        SOURCE: leadData.source || 'website',
+        LEAD_DATE: new Date().toISOString()
+      },
+      listIds: [listId]
+    })
+
+    console.log('Brevo contact result:', result)
+    return result
+  } catch (error: any) {
+    console.error('Brevo integration error:', error)
+    // Don't fail the entire request if Brevo fails
+    return { success: false, error: error.message }
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -78,11 +114,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Send to Brevo (don't fail if this fails)
+    const brevoResult = await sendToBrevo(validatedData)
+    
     return NextResponse.json(
       { 
         success: true, 
         message: 'Lead saved successfully',
-        leadId: data.id 
+        leadId: data.id,
+        brevo: brevoResult
       },
       { status: 201 }
     )

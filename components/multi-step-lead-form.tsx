@@ -107,6 +107,19 @@ export function MultiStepLeadForm({ onClose }: MultiStepLeadFormProps) {
     
     const data = form.getValues()
     
+      // Format phone number for Brevo (E.164 format: +1XXXXXXXXXX)
+  let formattedPhone = data.phone
+  if (formattedPhone) {
+    const digits = formattedPhone.replace(/\D/g, '')
+    if (digits.length === 10) {
+      // Convert to E.164 format for Brevo
+      formattedPhone = `+1${digits}`
+    } else if (digits.length === 11 && digits.startsWith('1')) {
+      // Already has country code
+      formattedPhone = `+${digits}`
+    }
+  }
+    
     try {
       const response = await fetch('/api/leads', {
         method: 'POST',
@@ -117,7 +130,7 @@ export function MultiStepLeadForm({ onClose }: MultiStepLeadFormProps) {
           first_name: data.first_name,
           email: data.email,
           question: data.question,
-          phone: data.phone || undefined,
+          phone: formattedPhone || undefined,
           source: 'website_modal'
         }),
       })
@@ -148,6 +161,29 @@ export function MultiStepLeadForm({ onClose }: MultiStepLeadFormProps) {
       e.preventDefault()
       handleNext()
     }
+  }
+
+  // Format phone number for display (US format for user experience)
+  const formatPhoneNumber = (value: string) => {
+    // Remove all non-digits
+    const digits = value.replace(/\D/g, '')
+    
+    // Limit to 10 digits for US numbers
+    const limitedDigits = digits.slice(0, 10)
+    
+    // Format for display as (XXX) XXX-XXXX
+    if (limitedDigits.length >= 6) {
+      return `(${limitedDigits.slice(0, 3)}) ${limitedDigits.slice(3, 6)}-${limitedDigits.slice(6)}`
+    } else if (limitedDigits.length >= 3) {
+      return `(${limitedDigits.slice(0, 3)}) ${limitedDigits.slice(3)}`
+    } else {
+      return limitedDigits
+    }
+  }
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhoneNumber(e.target.value)
+    form.setValue('phone', formatted)
   }
 
   if (isSubmitted) {
@@ -239,6 +275,7 @@ export function MultiStepLeadForm({ onClose }: MultiStepLeadFormProps) {
               placeholder={currentStepData.placeholder}
               className="bg-gray-800 border-gray-600 text-white placeholder-gray-400"
               onKeyPress={handleKeyPress}
+              onChange={currentStepData.type === 'tel' ? handlePhoneChange : undefined}
               autoFocus
             />
           )}

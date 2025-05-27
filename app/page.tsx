@@ -46,11 +46,21 @@ function RotatingPlatforms() {
 export default function Home() {
   return (
     <main className="bg-white text-gray-900">
-      {/* Hero Section with Perfect Hero Image */}
-      <section className="relative flex flex-col items-center justify-center min-h-screen text-white">
+      {/* Hero Section with Video Background */}
+      <section className="relative flex flex-col items-center justify-center min-h-screen text-white overflow-hidden">
         <div className="absolute inset-0">
-          <div className="w-full h-full bg-gradient-to-br from-blue-900 via-blue-800 to-gray-900"></div>
-          <div className="absolute inset-0 bg-black opacity-40"></div>
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="w-full h-full object-cover"
+          >
+            <source src="/AdVelocity_Home_Page_Video.mp4" type="video/mp4" />
+            {/* Fallback gradient if video fails to load */}
+            <div className="w-full h-full bg-gradient-to-br from-blue-900 via-blue-800 to-gray-900"></div>
+          </video>
+          <div className="absolute inset-0 bg-black opacity-50"></div>
         </div>
         <div className="relative z-10 text-center px-4 max-w-6xl mx-auto">
           <motion.h1

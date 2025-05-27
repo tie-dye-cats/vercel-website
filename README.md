@@ -10,7 +10,8 @@ Modern, professional agency website built with Next.js 14+, TypeScript, Tailwind
 - **Tailwind CSS** - Dark mode by default, custom CSS variables, responsive design
 - **Supabase Integration** - Database client, API routes, schema deployed
 - **Brevo Email Marketing** - Automated lead nurturing with phone number integration
-- **Lead Capture System** - Multi-step forms with validation and dual storage (Supabase + Brevo)
+- **ClickUp Task Management** - Automatic task creation for lead follow-up
+- **Lead Capture System** - Multi-step forms with validation and triple storage (Supabase + Brevo + ClickUp)
 - **Environment Configuration** - Secure environment variable handling
 - **API Endpoints** - Lead submission with Supabase + Brevo integration
 
@@ -56,7 +57,36 @@ Modern, professional agency website built with Next.js 14+, TypeScript, Tailwind
 
 - **[Supabase Setup](./SUPABASE_SETUP.md)** - Complete database setup guide
 - **[Brevo Integration](./BREVO_SETUP.md)** - Email marketing setup guide
+- **[ClickUp Integration](./CLICKUP_SETUP.md)** - Task management setup guide
 - **Environment Variables** - See `.env.example` for required variables
+
+## 🔄 Triple Storage System
+
+Our lead capture system uses a robust triple storage approach:
+
+1. **🗄️ Supabase (Primary)** - Reliable PostgreSQL database storage
+   - Always succeeds (primary storage)
+   - Complete lead data preservation
+   - Real-time capabilities
+   - Row Level Security (RLS)
+
+2. **📧 Brevo (Secondary)** - Email marketing automation
+   - Contact list management
+   - E.164 phone number formatting
+   - Automated email campaigns
+   - Graceful degradation if unavailable
+
+3. **📋 ClickUp (Tertiary)** - Task management and follow-up
+   - Automatic task creation for each lead
+   - Team collaboration and assignment
+   - Follow-up tracking and management
+   - Optional integration (graceful failure)
+
+**Benefits:**
+- **Reliability**: Lead data never lost (Supabase always succeeds)
+- **Automation**: Email marketing and task management happen automatically
+- **Flexibility**: Each integration can be enabled/disabled independently
+- **Scalability**: Add more integrations without affecting core functionality
 
 ## 🎯 Planned Features
 
@@ -69,7 +99,7 @@ Modern, professional agency website built with Next.js 14+, TypeScript, Tailwind
 
 ### Integrations
 - [x] Brevo email marketing (with E.164 phone number formatting)
-- [ ] ClickUp task management
+- [x] ClickUp task management (automatic lead task creation)
 - [ ] Google Tag Manager (GTM)
 - [ ] Google Analytics (GA4)
 - [ ] Meta Pixel tracking

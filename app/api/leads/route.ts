@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import { BrevoService } from '../../../lib/brevo.service'
+import { ClickUpService } from '../../../lib/clickup.service'
 
 // Validation schema matching actual database schema
 const leadSchema = z.object({
@@ -45,6 +46,42 @@ async function sendToBrevo(leadData: any) {
   } catch (error: any) {
     console.error('Brevo integration error:', error)
     // Don't fail the entire request if Brevo fails
+    return { success: false, error: error.message }
+  }
+}
+
+// Function to create task in ClickUp using the service class
+async function createClickUpTask(leadData: any, leadId: number) {
+  try {
+    const apiKey = process.env.CLICKUP_API_KEY
+    const listId = process.env.CLICKUP_LIST_ID
+    
+    if (!apiKey || !listId) {
+      console.warn('ClickUp API key or List ID not configured, skipping ClickUp integration')
+      return { success: false, error: 'ClickUp not configured' }
+    }
+
+    const clickUpService = new ClickUpService({
+      apiKey,
+      listId
+    })
+
+    // Create task in ClickUp
+    const result = await clickUpService.createLeadTask({
+      leadId,
+      firstName: leadData.first_name,
+      email: leadData.email,
+      phone: leadData.phone,
+      question: leadData.question,
+      source: leadData.source || 'website',
+      leadDate: new Date().toISOString()
+    })
+
+    console.log('ClickUp task result:', result)
+    return result
+  } catch (error: any) {
+    console.error('ClickUp integration error:', error)
+    // Don't fail the entire request if ClickUp fails
     return { success: false, error: error.message }
   }
 }
@@ -117,12 +154,16 @@ export async function POST(request: NextRequest) {
     // Send to Brevo (don't fail if this fails)
     const brevoResult = await sendToBrevo(validatedData)
     
+    // Create ClickUp task (don't fail if this fails)
+    const clickUpResult = await createClickUpTask(validatedData, data.id)
+    
     return NextResponse.json(
       { 
         success: true, 
         message: 'Lead saved successfully',
         leadId: data.id,
-        brevo: brevoResult
+        brevo: brevoResult,
+        clickup: clickUpResult
       },
       { status: 201 }
     )

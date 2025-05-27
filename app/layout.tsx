@@ -6,14 +6,19 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Professional Agency Website',
-  description: 'Modern professional agency website built with Next.js',
-  keywords: ['agency', 'professional', 'web development', 'design'],
-  authors: [{ name: 'Your Agency' }],
+  title: 'AdVelocity - Your Ad Growth Partner',
+  description: 'AdVelocity transforms your ad spend into measurable business growth. With millions in managed paid media across Facebook, Google, and TikTok, we deliver real results that scale your business.',
+  keywords: 'digital marketing, paid advertising, Facebook ads, Google ads, TikTok ads, ad management, marketing agency, ROI optimization',
+  authors: [{ name: 'AdVelocity' }],
   openGraph: {
-    title: 'Professional Agency Website',
-    description: 'Modern professional agency website built with Next.js',
+    title: 'AdVelocity - Your Ad Growth Partner',
+    description: 'Transform your ad spend into measurable business growth with expert paid media management.',
     type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'AdVelocity - Your Ad Growth Partner',
+    description: 'Transform your ad spend into measurable business growth with expert paid media management.',
   },
 }
 
@@ -24,7 +29,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} dark`}>
+      <body className={inter.className}>
         {children}
       </body>
     </html>
